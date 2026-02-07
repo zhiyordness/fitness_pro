@@ -1,7 +1,7 @@
 
 
-app_name = "nutrition"
-
-urlpatterns = {
-
-}
+# app_name = "nutrition"
+#
+# urlpatterns = [
+#
+# ]

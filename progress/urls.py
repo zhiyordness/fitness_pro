@@ -1,7 +1,7 @@
-
-
-app_name = 'progress'
-
-urlpatterns = {
-
-}
+#
+#
+# app_name = 'progress'
+#
+# urlpatterns = [
+#
+# ]
