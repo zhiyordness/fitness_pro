@@ -23,9 +23,9 @@ from fitness_pro import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('common.urls')),
-    # path('nutrition/', include('nutrition.urls')),
-    # path('progress/', include('progress.urls')),
-    # path('training/', include('training.urls')),
+    path('nutrition/', include('nutrition.urls')),
+    path('progress/', include('progress.urls')),
+    path('training/', include('training.urls')),
 ]
 
 
@@ -33,4 +33,8 @@ if settings.DEBUG:
     urlpatterns += static(
         settings.MEDIA_URL,
         document_root=settings.MEDIA_ROOT
+    )
+    urlpatterns += static(
+        settings.STATIC_URL,
+        document_root=settings.STATIC_ROOT
     )
