@@ -1,0 +1,22 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container">
+        <h1>Training splits</h1>
+        <div class="container d-flex flex-wrap justify-content-center gap-3">
+            {% for split in training_splits %}
+                <div class="card md-auto mb-3 flex-row" style="width: 18rem;">
+                    <div class="card-body">
+                        <h3 class="card-title">{{  split.day }}</h3>
+                        <p class="text-card">{{ split.description }}</p>
+                        <p class="card-text gap-3">{{ split.training_muscles }}</p>
+                        <a href="{% url 'training:details' split.id %}" class="btn btn-danger">View</a>
+                    </div>
+                </div>
+            {% empty %}     
+                <p>No training splits yet.</p>
+            {% endfor %}
+        </div>
+    </div>  
+{% endblock %}

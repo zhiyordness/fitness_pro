@@ -64,17 +64,15 @@ class TrainingDay(models.Model):
     description = models.CharField(
         max_length=100,
     )
-    training_muscles = models.ForeignKey(
+    training_muscles = models.ManyToManyField(
         'MuscleType',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         related_name='muscles_trained'
     )
     exercises = models.ManyToManyField(
         'Exercise',
         related_name= 'training_exercise'
     )
+
 
     def __str__(self):
         return f"{self.day} - {self.description}"

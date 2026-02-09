@@ -1,0 +1,17 @@
+{% extends 'common/base.html' %}
+
+{% load static %}
+
+{% block content %}
+<div class="home-page">
+    <img src="{% static 'images/pexels-gustavo-fring-8769370.jpg' %}" class="img-fluid" alt="home page image">
+        <div class="container d-flex flex-column align-items-center">
+            <h1 class="mb-4">Create training split</h1>
+                <form method="post" class="d-flex flex-wrap justify-content-center gap-3" style="width: 30rem;">
+                    {{ form }}
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Create</button>
+                </form>
+    </div>
+</div>  
+{% endblock %}  

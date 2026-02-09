@@ -1,10 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    Home Page Here
-</body>
-</html>
+{% extends 'common/base.html'  %}
+{% load static %}
+
+{% block content %}
+    <div class="home-page">
+        <img src="{% static 'images/pexels-gustavo-fring-8769370.jpg' %}" class="img-fluid" alt="home page image">
+        <div class="container d-flex flex-wrap justify-content-center">
+            {% if training_day %}
+                <h1>{{ training_day.day }}</h1>
+                    <div class="container d-flex flex-wrap justify-content-center gap-3">
+                        <div class="card md-auto mb-3 flex-row" style="width: 18rem;">
+                            <div class="card-body">
+                                <h3 class="card-title">{{ training_day.description }}</h3>
+                                {% for exercise in exercises %}
+                                <li class="card-text gap-3">{{ exercise.name }}</li>
+                                {% endfor %}
+                                <br>
+                                <a href="#" class="btn btn-danger">Details</a>
+                            </div>
+                        </div>
+
+                        <div class="card md-auto mb-3 flex-row" style="width: 18rem;">
+                            <div class="card-body">
+                                <h3 class="card-title">Next meal type</h3>
+                                {% for meal in meal.types %}
+                                <li class="card-text">Meal items</li>
+                                {% empty %}
+                                <li class="card-text">No meal plan for today.</li>
+                                {% endfor %}
+                                <br>
+                                <a href="#" class="btn btn-danger">Details</a>
+                            </div>
+                        </div>
+                    </div>
+            {% else %}
+                <p>No exercises for today.</p>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}

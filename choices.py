@@ -2,13 +2,13 @@ from django.db import models
 
 
 class WeekDaysChoices(models.TextChoices):
-    MONDAY = "Mon", "Monday"
-    TUESDAY = "Tue", "Tuesday"
-    WEDNESDAY = "Wed", "Wednesday"
-    THURSDAY = "Thur", "Thursday"
-    FRIDAY = "Fri", "Friday"
-    SATURDAY = "Sat", "Saturday"
-    SUNDAY = "Sun", "Sunday"
+    MONDAY = "Monday", "Monday"
+    TUESDAY = "Tuesday", "Tuesday"
+    WEDNESDAY = "Wednesday", "Wednesday"
+    THURSDAY = "Thursday", "Thursday"
+    FRIDAY = "Friday", "Friday"
+    SATURDAY = "Saturday", "Saturday"
+    SUNDAY = "Sunday", "Sunday"
 
 
 class MealTypeChoices(models.TextChoices):
