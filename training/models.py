@@ -53,6 +53,13 @@ class Exercise(BaseModel):
         related_name='trained_other_muscles',
         blank=True,
     )
+    split = models.ForeignKey(
+        'TrainingDay',
+        on_delete=models.CASCADE,
+        related_name='exercise_split',
+        null=True,
+        blank=True,
+    )
 
 
 
@@ -64,9 +71,13 @@ class TrainingDay(models.Model):
     description = models.CharField(
         max_length=100,
     )
+    muscle_group = models.ManyToManyField(
+        'MuscleGroup',
+        related_name='training_muscle_group',
+    )
     training_muscles = models.ManyToManyField(
         'MuscleType',
-        related_name='muscles_trained'
+        related_name='muscles_trained',
     )
     exercises = models.ManyToManyField(
         'Exercise',
@@ -76,6 +87,7 @@ class TrainingDay(models.Model):
 
     def __str__(self):
         return f"{self.day} - {self.description}"
+
 
 
 

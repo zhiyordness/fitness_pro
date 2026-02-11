@@ -6,12 +6,14 @@
         <h1>Training splits</h1>
         <div class="container d-flex flex-wrap justify-content-center gap-3">
             {% for split in training_splits %}
-                <div class="card md-auto mb-3 flex-row" style="width: 18rem;">
-                    <div class="card-body">
+                <div class="card md-auto mb-3 flex-row " style="width: 18rem;">
+                    <div class="card-body d-flex flex-column align-items-center text-center">
                         <h3 class="card-title">{{  split.day }}</h3>
                         <p class="text-card">{{ split.description }}</p>
-                        <p class="card-text gap-3">{{ split.training_muscles }}</p>
-                        <a href="{% url 'training:details' split.id %}" class="btn btn-danger">View</a>
+                        {% for group in split.muscle_group.all %}
+                        <li class="card-text">{{ group }}</li>
+                        {% endfor %}
+                        <a href="{% url 'training:details' split.id %}" class="btn btn-info">View</a>
                     </div>
                 </div>
             {% empty %}     

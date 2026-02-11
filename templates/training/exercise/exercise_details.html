@@ -1,0 +1,36 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">{{ exercise.name }} - Details</h2>
+            </div>
+            <div class="card-body">
+                <p><strong>Sets:</strong> {{ exercise.sets }}</p>
+                <p><strong>Repetitions:</strong> {{ exercise.repetitions }}</p>
+                <p><strong>Video Link:</strong> <a href="{{ exercise.video_link }}" target="_blank">{{ exercise.video_link }}</a></p>
+            
+                {% if exercise.secondary_muscles.all %}
+                <p><strong>Secondary Muscles:</strong>
+                    {% for muscle in exercise.secondary_muscles.all %}
+                    <span class="badge bg-info text-dark me-1">{{ muscle.name }}</span>{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                </p>
+                {% endif %}
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'training:exercise-edit' pk=exercise.pk %}" class="btn btn-warning me-2">Edit</a>
+                    <a href="{% url 'training:exercise-delete' pk=exercise.pk %}" class="btn btn-danger">Delete</a>
+                    <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <small>Created on: {{ exercise.created_on|date:"F d, Y P" }}</small><br>
+                <small>Last updated: {{ exercise.updated_on|date:"F d, Y P" }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

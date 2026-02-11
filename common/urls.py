@@ -7,3 +7,4 @@ urlpatterns = [
     path('', views.current_training_day_details, name='home'),
 
 ]
+

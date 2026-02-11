@@ -6,20 +6,15 @@
     <div class="col-md-8 offset-md-2">
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white">
-                <h2 class="mb-0">{{ training_split.day }} - Details</h2>
+                <h2 class="mb-0">{{ training_day.day }} - Details</h2>
             </div>
             <div class="card-body">
-                <h3><strong>Description:</strong> {{ training_split.description }}</h3>
-                
-                <div class="card-text mt-3">
-                    {% for group in training_split.muscle_group.all %}
-                    <span class="badge bg-info me-1">{{ group }}</span>
-                    {% endfor %}
-                </div>
+                <p><strong>Description:</strong> {{ training_day.description }}</p>
+
                 <h4 class="mt-4">Target Muscles:</h4>
-                {% if training_split.training_muscles.all %}
+                {% if training_day.training_muscles.all %}
                 <ul class="list-group mb-3">
-                    {% for muscle in training_split.training_muscles.all %}
+                    {% for muscle in training_day.training_muscles.all %}
                     <li class="list-group-item">{{ muscle.name }}</li>
                     {% endfor %}
                 </ul>
@@ -28,10 +23,10 @@
                 {% endif %}
 
                 <h4 class="mt-4">Exercises:</h4>
-                {% if training_split.exercises.all %}
+                {% if training_day.exercises.all %}
                 <div class="list-group mb-3">
-                    {% for exercise in training_split.exercises.all %}
-                    <a href="{% url 'training:exercise-details' pk=exercise.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    {% for exercise in training_day.exercises.all %}
+                    <a href="{% url 'exercise details' pk=exercise.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         {{ exercise.name }}
                         <span class="badge bg-secondary rounded-pill">{{ exercise.sets }} sets x {{ exercise.repetitions }} reps</span>
                     </a>
@@ -42,10 +37,13 @@
                 {% endif %}
 
                 <div class="d-flex justify-content-end mt-4">
-                    <a href="{% url 'training:split-edit' training_split.pk%}" class="btn btn-warning me-2">Edit</a>
-                    <a href="{% url 'training:split-delete' training_split.pk%}" class="btn btn-danger">Delete</a>
-                    <a href="{% url 'training:split-list' %}" class="btn btn-secondary">Back</a>
+                    <a href="{% url 'training:split-edit' pk=training_day.pk %}" class="btn btn-warning me-2">Edit</a>
+                    <a href="{% url 'training:split-delete' pk=training_day.pk %}" class="btn btn-danger">Delete</a>
                 </div>
+            </div>
+            <div class="card-footer text-muted">
+                <small>Created on: {{ training_day.created_on|date:"F d, Y P" }}</small><br>
+                <small>Last updated: {{ training_day.updated_on|date:"F d, Y P" }}</small>
             </div>
         </div>
     </div>

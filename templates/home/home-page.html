@@ -7,7 +7,7 @@
         <div class="container d-flex flex-wrap justify-content-center">
             {% if training_day %}
                 <h1>{{ training_day.day }}</h1>
-                    <div class="container d-flex flex-wrap justify-content-center gap-3">
+                    <div class="container d-flex flex-wrap justify-content-center gap-3"  >
                         <div class="card md-auto mb-3 flex-row" style="width: 18rem;">
                             <div class="card-body">
                                 <h3 class="card-title">{{ training_day.description }}</h3>
@@ -15,7 +15,7 @@
                                 <li class="card-text gap-3">{{ exercise.name }}</li>
                                 {% endfor %}
                                 <br>
-                                <a href="#" class="btn btn-danger">Details</a>
+                                <a href="{% url 'training:details' pk=training_day.pk %}" class="btn btn-danger">Details</a>
                             </div>
                         </div>
 
