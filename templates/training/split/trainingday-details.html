@@ -45,6 +45,9 @@
                 <small>Created on: {{ training_day.created_on|date:"F d, Y P" }}</small><br>
                 <small>Last updated: {{ training_day.updated_on|date:"F d, Y P" }}</small>
             </div>
+            {% for message in messages %}
+                <span class="badge bg-secondary rounded-pill">{{ message }}</span>
+            {% endfor %}
         </div>
     </div>
 </div>

@@ -1,0 +1,78 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+<h1 class="text-center my-4">Progress Overview</h1>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        {% if last_record %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Last Recorded Progress - {{ last_record.date|date:"F d, Y - H:i" }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <strong>Day:</strong> {{ last_record.day }}
+                    </div>
+                    <div class="col-sm-6">
+                        <strong>Weight:</strong> {{ last_record.weight }} kg
+                    </div>
+                </div>
+                <hr>
+                <h5 class="mb-3">Measurements (cm):</h5>
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Chest:</strong> {{ last_record.chest }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Shoulders:</strong> {{ last_record.shoulders }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Waist:</strong> {{ last_record.waist }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Biceps:</strong> {{ last_record.biceps }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Neck:</strong> {{ last_record.neck }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Butt:</strong> {{ last_record.butt }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Tight:</strong> {{ last_record.tight }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Calf:</strong> {{ last_record.calf }}
+                    </div>
+                </div>
+
+                {% if last_record.picture %}
+                <hr>
+                <h5 class="mb-3">Progress Picture:</h5>
+                <div class="text-center">
+                    <img src="{{ last_record.picture.url }}" class="img-fluid rounded shadow" alt="Progress Picture" style="max-height: 400px;">
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-end">
+                <a href="{% url 'progress:record-create' %}" class="btn btn-warning btn-sm me-2">Create New</a>
+                <a href="{% url 'progress:records-list' %}" class="btn btn-danger btn-sm">View all</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            No progress records found. Start by adding a new record!
+        </div>
+        <div class="text-center mt-3">
+            <a href="{% url 'progress:record-create' %}" class="btn btn-primary btn-lg">Add New Record</a>
+        </div>
+        {% endif %}
+    {% for message in messages %}
+        <span class="badge bg-secondary rounded-pill">{{ message }}</span>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

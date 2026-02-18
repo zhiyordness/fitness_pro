@@ -52,12 +52,6 @@ class Meal(models.Model):
     )
     time = models.TimeField()
 
-    food_items = models.ManyToManyField(
-        'FoodDatabase',
-        through='MealFoodItem',
-        related_name='meals'
-    )
-
     def __str__(self):
         return f"{self.day} - {self.name}"
 
@@ -82,5 +76,15 @@ class MealFoodItem(models.Model):
     )
 
 
+class NutritionDay(models.Model):
+
+    name = models.CharField(
+        max_length=50,
+        choices=WeekDaysChoices.choices,
+    )
+    meals = models.ManyToManyField(
+        'Meal',
+        related_name='nutrition_days',
+    )
 
 

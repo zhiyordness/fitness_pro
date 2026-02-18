@@ -5,13 +5,14 @@ from nutrition import views
 app_name = "nutrition"
 
 urlpatterns = [
+    path('nutrition/', views.NutritionHomeView.as_view(), name='nutrition-home'),
     path('', include([
         path('plan/', include([
-            path('create/', views.plan_create, name='plan-create'),
+            path('create/', views.PlanCreateView.as_view(), name='plan-create'),
             path('<int:pk>/', include([
-                path('', views.plan_details, name='plan-details'),
-                path('edit/', views.plan_edit, name='plan-edit'),
-                path('delete/', views.plan_delete, name='plan-delete'),
+                path('', views.PlanDetailsView.as_view(), name='plan-details'),
+                path('edit/', views.PlanEditView.as_view(), name='plan-edit'),
+                path('delete/', views.PlanDeleteView.as_view(), name='plan-delete'),
             ])),
         ])),
         path('meal/', include([
@@ -20,15 +21,6 @@ urlpatterns = [
                 path('', views.meal_details, name='meal-details'),
                 path('edit/', views.meal_edit, name='meal-edit'),
                 path('delete/', views.meal_delete, name='meal-delete'),
-            ])),
-        ])),
-
-        path('day/', include([
-            path('create/', views.day_create, name='day-create'),
-            path('<int:pk>/', include([
-                path('', views.day_details, name='day-details'),
-                path('edit/', views.day_edit, name='day-edit'),
-                path('delete/', views.day_delete, name='day-delete'),
             ])),
         ])),
         path('item/', include([

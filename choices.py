@@ -12,14 +12,14 @@ class WeekDaysChoices(models.TextChoices):
 
 
 class MealTypeChoices(models.TextChoices):
-    BREAKFAST = "BF", "Breakfast"
-    SNACK = "SN", "Snack"
-    PRE_WORKOUT = "PRE", "Pre workout"
-    POST_WORKOUT = "POST", "Post workout"
-    DINNER = "DIN", "Dinner"
+    BREAKFAST = "Breakfast", "Breakfast"
+    SNACK = "Snack", "Snack"
+    PRE_WORKOUT = "Pre workout", "Pre workout"
+    POST_WORKOUT = "Post workout", "Post workout"
+    DINNER = "Dinner", "Dinner"
 
 
 class MeasurementsChoices(models.TextChoices):
-    GRAM = "GR", "Grams"
-    PIECE = "P", "Pieces"
-    ML = "ML", "Milliliters"
+    GRAM = "Kg.", "Kilograms"
+    PIECE = "Pcs.", "Pieces"
+    ML = "Ltr.", "Liters"

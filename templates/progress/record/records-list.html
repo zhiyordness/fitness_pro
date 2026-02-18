@@ -1,0 +1,60 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-4 text-center">Progress Records</h2>
+        <div class="row">
+            {% for record in object_list %} {# Assuming 'object_list' is passed from a ListView #}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="row g-0">
+                            <div class="col-md-4 d-flex align-items-center justify-content-center p-2">
+                                {# Placeholder image - replace with actual record.image_url if available #}
+                                <img src="{{ record.picture.url }}" class="img-fluid rounded-start" alt="Record Image">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ record.day|date:"F d, Y" }}</h5>
+                                    <p class="card-text mb-1"><strong>Date:</strong> {{ record.date|date:'d-M-Y' }}</p>
+                                    <p class="card-text mb-1"><strong>Weight:</strong> {{ record.weight }} kg</p>
+                                    <p class="card-text mb-auto"><strong>Weight change:</strong> {{ '+/-' }}</p>
+                                    <div class="mt-3">
+                                        <a href="{% url 'progress:record-details' record.pk %}" class="btn btn-primary btn-sm">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <p class="text-center">No progress records found. <a href="{% url 'progress:record_create' %}">Create one now!</a></p>
+                </div>
+            {% endfor %}
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Previous</a></li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for i in paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Next</a></li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+{% endblock %}

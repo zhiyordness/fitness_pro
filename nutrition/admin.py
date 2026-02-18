@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from nutrition.models import FoodDatabase, Meal, MealFoodItem
+
+from nutrition.models import FoodDatabase, Meal, MealFoodItem, NutritionDay
 
 
 # Register your models here.
@@ -21,4 +22,11 @@ class MealFoodItem(admin.ModelAdmin):
     list_display = ['meal' ,'food__name', 'quantity']
     search_fields = ['meal__name']
     list_filter = ['meal__name']
+
+
+@admin.register(NutritionDay)
+class NutritionDayAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name']
+    list_filter = ['name']
 

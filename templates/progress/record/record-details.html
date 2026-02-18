@@ -1,0 +1,67 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+<h1 class="text-center my-4">Record details</h1>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Progress Record - {{ record.date|date:"F d, Y - H:i" }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <strong>Day:</strong> {{ record.day }}
+                    </div>
+                    <div class="col-sm-6">
+                        <strong>Weight:</strong> {{ record.weight }} kg
+                    </div>
+                </div>
+                <hr>
+                <h5 class="mb-3">Measurements (cm):</h5>
+                <div class="row">
+                    <div class="col-sm-6 mb-2">
+                        <strong>Chest:</strong> {{ record.chest }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Shoulders:</strong> {{ record.shoulders }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Waist:</strong> {{ record.waist }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Biceps:</strong> {{ record.biceps }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Neck:</strong> {{ record.neck }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Butt:</strong> {{ record.butt }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Tight:</strong> {{ record.tight }}
+                    </div>
+                    <div class="col-sm-6 mb-2">
+                        <strong>Calf:</strong> {{ record.calf }}
+                    </div>
+                </div>
+
+                {% if record.picture %}
+                <hr>
+                <h5 class="mb-3">Progress Picture:</h5>
+                <div class="text-center">
+                    <img src="{{ record.picture.url }}" class="img-fluid rounded shadow" alt="Progress Picture" style="max-height: 400px;">
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-end">
+                <a href="{% url 'progress:record-edit' pk=record.pk %}" class="btn btn-warning btn-sm me-2">Edit Record</a>
+                <a href="{% url 'progress:record-delete' pk=record.pk %}" class="btn btn-danger btn-sm">Delete Record</a>
+                <a href="{% url 'progress:records-list' %}" class="btn btn-secondary btn-sm">All Records</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
