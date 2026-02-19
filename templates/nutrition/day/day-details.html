@@ -1,0 +1,85 @@
+{% extends 'common/base.html' %}
+
+{% load static %}
+
+{% block content %}
+    <div class="container mt-4">
+                    <div class="card mb-4">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between">
+                            <h2>{{ day.name }}</h2>
+                            <div class="card-footer d-flex justify-content-end gap-2">
+                                <a href="{% url 'nutrition:day-edit' pk=day.pk %}" class="btn btn-warning">Edit</a>
+                                <a href="#" class="btn btn-danger">Delete</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if day.meals.all %}
+                    {% for meal in day.ordered_meals %}
+                    <div class="card mb-3 meal-card">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <h3 class="h5 mb-0">{{ meal.name }}</h3>
+                            <small class="text-muted-white">{{ meal.time|time:"g:i A" }}</small>
+                        </div>
+                        <div class="card-body">
+                            {% if meal.mealfooditem_set.all %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Food Item</th>
+                                                <th>Quantity</th>
+                                                <th>Measure</th>
+                                                <th>Calories</th>
+                                                <th>Protein</th>
+                                                <th>Carbs</th>
+                                                <th>Fat</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in meal.mealfooditem_set.all %}
+                                            <tr>
+                                                <td><strong>{{ item.food.name }}</strong>
+                                                <a href="{% url 'nutrition:item-delete' meal.pk item.pk %}" class="btn btn-sm btn-danger">Remove</a>
+                                                </td>
+                                                <td>{{ item.quantity|floatformat:2 }}</td>
+                                                <td>{{ item.measure }}</td>
+                                                <td>{{ item.food.calories|floatformat:2 }}</td>
+                                                <td>{{ item.food.protein|floatformat:2 }}g</td>
+                                                <td>{{ item.food.carbohydrates|floatformat:2 }}g</td>
+                                                <td>{{ item.food.fat|floatformat:2 }}g</td>
+                                            </tr>
+
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot class="table-secondary">
+                                            <tr>
+                                                <th colspan="3">Meal Totals:</th>
+                                                <th>{{ meal.totals.calories|floatformat:2 }}</th>
+                                                <th>{{ meal.totals.protein|floatformat:2 }}g</th>
+                                                <th>{{ meal.totals.carbohydrates|floatformat:2 }}g</th>
+                                                <th>{{ meal.totals.fat|floatformat:2 }}g</th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted mb-0">No food items recorded for this meal.</p>
+                            {% endif %}
+                            <div class="card-footer d-flex justify-content-end gap-2">
+                                <a href="{% url 'nutrition:item-add' pk=meal.pk%}" class="btn btn-success">Add Item</a>
+                                <a href="{% url 'nutrition:meal-edit' pk=meal.pk%}" class="btn btn-warning">Edit</a>
+                                <a href="{% url 'nutrition:meal-delete' pk=meal.pk %}" class="btn btn-danger">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="text-center mt-4">
+                 <a href="{% url 'nutrition:day-create' %}" class="btn btn-success">Create New Day</a>
+                 <a href="{% url 'nutrition:meal-create' day_pk=day.pk %}" class="btn btn-success">Add New Meal</a>
+                 <a href="{% url 'nutrition:nutrition-home' %}" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

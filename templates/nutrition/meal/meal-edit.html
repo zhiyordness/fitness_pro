@@ -1,0 +1,15 @@
+{% extends 'common/base.html' %}
+
+{% load static %}
+
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Edit Meal: {{ meal.name }}</h1>
+    <form method="POST">
+        {{ form }}
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

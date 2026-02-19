@@ -10,24 +10,26 @@
     {% if days %}
         {% for day in days %}
         <div class="card mb-5 shadow-sm">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                 <h2 class="h4 mb-0">{{ day.name }}</h2>
+                <a href="{% url 'nutrition:day-details' pk=day.pk%}" class="btn btn-warning ">Details</a>
                 <div class="text-end">
                     {% with totals=day_totals|get_item:day.pk %}
                         <p class="mb-0"><strong>Calories:</strong> {{ totals.calories|floatformat:0 }} kcal</p>
-                        <p class="mb-0"><strong>Protein:</strong> {{ totals.protein|floatformat:1 }} g</p>
-                        <p class="mb-0"><strong>Carbs:</strong> {{ totals.carbohydrates|floatformat:1 }} g</p>
-                        <p class="mb-0"><strong>Fat:</strong> {{ totals.fats|floatformat:1 }} g</p>
+                        <p class="mb-0"><strong>Protein:</strong> {{ totals.protein|floatformat:2 }} g</p>
+                        <p class="mb-0"><strong>Carbs:</strong> {{ totals.carbohydrates|floatformat:2 }} g</p>
+                        <p class="mb-0"><strong>Fat:</strong> {{ totals.fat|floatformat:2 }} g</p>
                     {% endwith %}
                 </div>
             </div>
             <div class="card-body">
                 {% if day.meals.all %}
+                    <div class="row gx-3 gy-3">
                     {% for meal in day.meals.all %}
-                    <div class="card mb-3 meal-card">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div class="card mb-3 meal-card shadow-sm">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                             <h3 class="h5 mb-0">{{ meal.name }}</h3>
-                            <small class="text-muted">{{ meal.time|time:"g:i A" }}</small>
+                            <small class="text-muted-white">{{ meal.time|time:"g:i A" }}</small>
                         </div>
                         <div class="card-body">
                             {% if meal.mealfooditem_set.all %}
@@ -36,36 +38,15 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th>Food Item</th>
-                                                <th>Quantity</th>
-                                                <th>Measure</th>
-                                                <th>Calories</th>
-                                                <th>Protein</th>
-                                                <th>Carbs</th>
-                                                <th>Fat</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {% for item in meal.mealfooditem_set.all %}
                                             <tr>
-                                                <td><strong>{{ item.food.name }}</strong></td>
-                                                <td>{{ item.quantity|floatformat:2 }}</td>
-                                                <td>{{ item.measure }}</td>
-                                                <td>{{ item.food.calories|floatformat:2 }}</td>
-                                                <td>{{ item.food.protein|floatformat:2 }}g</td>
-                                                <td>{{ item.food.carbohydrates|floatformat:2 }}g</td>
-                                                <td>{{ item.food.fat|floatformat:2 }}g</td>
+                                                <td>{{ item.food.name }}</td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
-{#                                        <tfoot class="table-secondary">#}
-{#                                            <tr>#}
-{#                                                <th colspan="3">Meal Totals:</th>#}
-{#                                                <th>{{ meal.totals.calories|floatformat:2 }}</th>#}
-{#                                                <th>{{ meal.totals.protein|floatformat:2 }}g</th>#}
-{#                                                <th>{{ meal.totals.carbohydrates|floatformat:2 }}g</th>#}
-{#                                                <th>{{ meal.totals.fat|floatformat:2 }}g</th>#}
-{#                                            </tr>#}
-{#                                        </tfoot>#}
                                     </table>
                                 </div>
                             {% else %}
@@ -74,15 +55,44 @@
                         </div>
                     </div>
                     {% endfor %}
+                    </div>
                 {% else %}
                     <p class="text-muted">No meals recorded for this day.</p>
                 {% endif %}
             </div>
         </div>
         {% endfor %}
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Previous</a></li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for i in paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Next</a></li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
     {% else %}
         <div class="alert alert-info text-center" role="alert">
             No nutrition data available. Start tracking your meals!
+        </div>
+        <div class="text-center mt-3">
+            <a href="{% url 'nutrition:day-create' %}" class="btn btn-success ">Add Your First Day</a>
         </div>
     {% endif %}
 </div>

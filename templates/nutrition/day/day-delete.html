@@ -7,15 +7,15 @@
         <div class="col-md-8 col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-danger text-white">
-                    <h2 class="mb-0">Delete Meal Confirmation</h2>
+                    <h2 class="mb-0">Delete Day Confirmation</h2>
                 </div>
                 <div class="card-body">
-                    <p class="lead text-center">Are you sure you want to delete the meal: <strong>"{{ object.name }}"</strong>?</p>
-                    <p class="text-center text-muted">This action cannot be undone.</p>
+                    <p class="lead text-center">Are you sure you want to delete the day: <strong>"{{ object.name }}"</strong>?</p>
+                    <p class="text-center text-muted">Deleting a day will also delete all associated meals and food items for that day. This action cannot be undone.</p>
                     <form method="post" class="mt-4 text-center">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger me-2">Confirm Delete</button>
-                        <a href="{% url 'nutrition:day-details' object.day.pk %}" class="btn btn-secondary">Cancel</a>
+                        <a href="{% url 'nutrition:nutrition-overview' %}" class="btn btn-secondary">Cancel</a>
                     </form>
                 </div>
             </div>

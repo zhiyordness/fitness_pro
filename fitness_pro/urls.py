@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 from fitness_pro import settings
+from common.views import page_not_found_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,3 +35,5 @@ if settings.DEBUG:
         settings.MEDIA_URL,
         document_root=settings.MEDIA_ROOT
     )
+
+handler404 = page_not_found_view

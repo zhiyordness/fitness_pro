@@ -70,9 +70,7 @@
             <a href="{% url 'progress:record-create' %}" class="btn btn-primary btn-lg">Add New Record</a>
         </div>
         {% endif %}
-    {% for message in messages %}
-        <span class="badge bg-secondary rounded-pill">{{ message }}</span>
-    {% endfor %}
+
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'common/base.html' %}
+
+{% block title %}Day Details for {{ meal.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-4">Details for {{ meal.name }}</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Day: {{ meal.name }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if meal..all %}
+                        <h5>Meals planned for this day:</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for single_meal in meal.meals.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ single_meal.get_name_display }}</strong> - {{ single_meal.time }}
+                                        <br>
+                                        <small>Order: {{ single_meal.get_order_display }}</small>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No meals planned for this day.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'nutrition:nutrition-home' %}" class="btn btn-secondary">Back to Nutrition Overview</a>
+                    <a href="{% url 'nutrition:day-details' pk=meal.pk %}" class="btn btn-secondary">Go to Day Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

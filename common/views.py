@@ -19,3 +19,7 @@ def current_training_day_details(request: HttpRequest) -> HttpResponse:
     }
 
     return render(request, 'home/home-page.html', context)
+
+
+def page_not_found_view(request: HttpRequest, exception) -> HttpResponse:
+    return render(request, 'errors/404.html', status=404)

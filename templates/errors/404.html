@@ -1,0 +1,12 @@
+why {% extends 'common/base.html' %}
+
+{% block title %}Page Not Found{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-top: 50px;">
+    <h1>404 - Page Not Found</h1>
+    <p>We're sorry, but the page you requested could not be found.</p>
+    <p>It might have been moved, deleted, or you might have mistyped the address.</p>
+    <p><a href="{% url 'home' %}">Go to Homepage</a></p>
+</div>
+{% endblock %}
