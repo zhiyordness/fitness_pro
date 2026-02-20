@@ -4,7 +4,7 @@ from common import views
 app_name = "common"
 
 urlpatterns = [
-    path('', views.current_training_day_details, name='home'),
+    path('', views.HomePageView.as_view(), name='home'),
 
 ]
 

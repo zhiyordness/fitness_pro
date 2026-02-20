@@ -1,59 +1,37 @@
 from logging import disable
 
 from django import forms
+from django.utils.translation import round_away_from_one
 
 from training.models import TrainingDay, Exercise
 
 
-class SplitCreateForm(forms.ModelForm):
+class TrainingDayCreateForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['day'].widget.attrs.update({'class': 'form-control'})
+        self.fields['description'].widget.attrs.update({'class': 'form-control'})
+
+        self.fields['day'].label = 'Day'
+        self.fields['description'].label = 'Description'
+
+        self.fields['day'].help_text = 'Select the day of the week for this training split.'
+        self.fields['description'].help_text = 'Provide a brief description of the training split.'
+
+        self.fields['day'].error_messages.update({'required': 'Day is required.'})
+        self.fields['description'].error_messages.update({'required': 'Description is required.'})
+
+        self.fields['description'].widget = forms.Textarea(attrs={
+            'placeholder': 'Enter training split description',
+            'rows': 3,
+            'class': 'form-control'
+        })
+
     class Meta:
         model = TrainingDay
-        fields = '__all__'
+        fields = ['day', 'description']
 
-        labels = {
-            'day': 'Day',
-            'description': 'Description',
-            'training_muscles': 'Training Muscles',
-            'exercises': 'Exercises',
-        }
-
-        widgets = {
-            'description': forms.Textarea(
-                attrs={
-                    'placeholder': 'Enter training split description',
-                    'rows': 3,
-                }),
-            'training_muscles': forms.SelectMultiple(
-                attrs={
-                    'size': 10,
-                }
-            ),
-            'exercises': forms.SelectMultiple(
-                attrs={
-                    'size': 10,
-                }
-            ),
-        }
-        error_messages = {
-            'day': {
-                'required': 'Day is required.',
-            },
-            'description': {
-                'required': 'Description is required.',
-            },
-            'training_muscles': {
-                'required': 'At least one training muscle is required.',
-            },
-            'exercises': {
-                'required': 'At least one exercise is required.',
-            },
-        }
-        help_texts = {
-            'day': 'Select the day of the week for this training split.',
-            'description': 'Provide a brief description of the training split.',
-            'training_muscles': 'Select the muscles that will be trained in this split.',
-            'exercises': 'Select the exercises that will be included in this split.',
-        }
 
 
 

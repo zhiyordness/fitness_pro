@@ -8,7 +8,7 @@
     <div class="col-md-8">
         {% if last_record %}
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-dark text-white">
                 <h4 class="mb-0">Last Recorded Progress - {{ last_record.date|date:"F d, Y - H:i" }}</h4>
             </div>
             <div class="card-body">
@@ -58,8 +58,8 @@
                 {% endif %}
             </div>
             <div class="card-footer text-end">
-                <a href="{% url 'progress:record-create' %}" class="btn btn-warning btn-sm me-2">Create New</a>
-                <a href="{% url 'progress:records-list' %}" class="btn btn-danger btn-sm">View all</a>
+                <a href="{% url 'progress:record-create' %}" class="btn btn-success btn-sm me-2">Create New</a>
+                <a href="{% url 'progress:records-list' %}" class="btn btn-primary btn-sm">View all</a>
             </div>
         </div>
         {% else %}

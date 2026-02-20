@@ -1,41 +1,90 @@
-{% extends 'common/base.html'  %}
+{% extends 'common/base.html' %}
 {% load static %}
 
 {% block content %}
-    <div class="home-page">
-        <img src="{% static 'images/pexels-gustavo-fring-8769370.jpg' %}" class="img-fluid" alt="home page image">
-        <div class="container d-flex flex-wrap justify-content-center">
-            {% if training_day %}
-                <h1>{{ training_day.day }}</h1>
-                    <div class="container d-flex flex-wrap justify-content-center gap-3"  >
-                        <div class="card md-auto mb-3 flex-row" style="width: 18rem;">
-                            <div class="card-body">
-                                <h3 class="card-title">{{ training_day.description }}</h3>
-                                {% for exercise in exercises %}
-                                <li class="card-text gap-3">{{ exercise.name }}</li>
-                                {% endfor %}
-                                <br>
-                                <a href="{% url 'training:details' pk=training_day.pk %}" class="btn btn-danger">Details</a>
-                            </div>
-                        </div>
+<div class="container mt-4">
+    <!-- Hero Section -->
+    <div class="jumbotron bg-dark text-white text-center p-5 rounded">
+        <h1 class="display-4">Welcome to Fitness Pro</h1>
+        <p class="lead">Track your training days, exercises, and muscle groups</p>
+        {% if not training_days %}
+        <hr class="my-4 bg-white">
+        <p>Get started by creating your first training day</p>
+        <a class="btn btn-light btn-lg" href="{% url 'training:split-create' %}" role="button">
+            Create Training Day
+        </a>
+        {% endif %}
+    </div>
 
-                        <div class="card md-auto mb-3 flex-row" style="width: 18rem;">
-                            <div class="card-body">
-                                <h3 class="card-title">Next meal type</h3>
-                                {% for meal in meal.types %}
-                                <li class="card-text">Meal items</li>
-                                {% empty %}
-                                <li class="card-text">No meal plan for today.</li>
-                                {% endfor %}
-                                <br>
-                                <a href="#" class="btn btn-danger">Details</a>
-                            </div>
+    <!-- Stats Section -->
+    <!-- Recent Training Days -->
+<div class="card bg-light mb-5">
+    <div class="card-header bg-dark text-white">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-white mb-0">Today's Training</h2>
+            </div>
+        </div>
+    </div>
+    <div class="card-body bg-light text-white">
+        <div class="row">
+            {% if training_day %}
+                <div class="col-md-4 mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title text-dark">{{ training_day.day }}</h5>
+                            <p class="card-text">{{ day.description|truncatechars:50 }}</p>
+                            <p class="card-text">
+                                <small class="text-dark">
+                                    {{ training_day.exercises.count }} exercises
+                                </small>
+                            </p>
+                            <a href="{% url 'training:details' training_day.pk%}" class="btn btn-primary btn-sm">
+                                View Details
+                            </a>
                         </div>
-                    </div>
+                </div>
             {% else %}
-                <p>No exercises for today.</p>
+                <div class="col-12">
+                    <p class="text-light">No training today.
+                        <a href="{% url 'training:split-create' %}">Create one now!</a>
+                    </p>
+                </div>
             {% endif %}
         </div>
     </div>
+</div>
 
+
+    <!-- Popular Exercises -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Popular Exercises</h2>
+            <div class="row">
+                {% for exercise in popular_exercises %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ exercise.name }}</h5>
+                                <p class="card-text">
+                                    Sets: {{ exercise.sets }} | Reps: {{ exercise.repetitions }}
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        Muscles:
+                                        {% for muscle in exercise.muscles.all %}
+                                            {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </small>
+                                </p>
+                                <a href="{% url 'training:exercise-details' exercise.pk %}" class="btn btn-info btn-sm">
+                                    View Exercise
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

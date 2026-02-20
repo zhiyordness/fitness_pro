@@ -1,4 +1,17 @@
 body {
     min-height: 100vh;
+    background-image: url('../images/Gym_Dumbbells_For_Working_Out_(193383405).jpeg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+.error-404-background {
+    background-image: url('static/images/59766cc8c51aaf431.73780060.jpg') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
 }
 

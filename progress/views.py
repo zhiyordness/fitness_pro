@@ -72,7 +72,8 @@ class RecordListView(ListView):
 
 class RecordDeleteView(DeleteView):
     model = ProgresTracking
-
+    template_name = 'progress/record/record-delete.html'
+    context_object_name = 'record'
     success_url = reverse_lazy('progress:overview')
 
     def form_valid(self, form):

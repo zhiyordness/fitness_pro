@@ -1,5 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.urls import reverse
 
 from choices import WeekDaysChoices
 from common.models import BaseModel
@@ -7,20 +8,11 @@ from common.models import BaseModel
 
 # Create your models here.
 
-class MuscleGroup(BaseModel):
-    ...
-
-
-class MuscleType(BaseModel):
-
-    group_of_muscles = models.ForeignKey(
-        'MuscleGroup',
-        on_delete=models.CASCADE,
-        related_name='belongs_muscle_types',
-    )
-
-
 class Exercise(BaseModel):
+    muscles = models.ManyToManyField(
+        'Muscle',
+        related_name='exercises',
+    )
 
     sets = models.SmallIntegerField(
         validators=[
@@ -34,32 +26,22 @@ class Exercise(BaseModel):
     )
     video_link = models.URLField()
 
-    type_of_muscle = models.ForeignKey(
-        'MuscleType',
-        on_delete=models.CASCADE,
-        related_name='trained_muscle'
-    )
+    def __str__(self):
+        return self.name
 
-    muscles_group = models.ForeignKey(
+
+class MuscleGroup(BaseModel):
+    ...
+
+
+class Muscle(BaseModel):
+
+    group = models.ForeignKey(
         'MuscleGroup',
-        on_delete=models.SET_NULL,
-        related_name='trained_muscle_group',
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
+        related_name='muscles',
     )
 
-    secondary_muscles = models.ManyToManyField(
-        'MuscleType',
-        related_name='trained_other_muscles',
-        blank=True,
-    )
-    split = models.ForeignKey(
-        'TrainingDay',
-        on_delete=models.CASCADE,
-        related_name='exercise_split',
-        null=True,
-        blank=True,
-    )
 
 
 
@@ -69,21 +51,20 @@ class TrainingDay(models.Model):
         choices=WeekDaysChoices.choices,
     )
     description = models.CharField(
-        max_length=100,
+        max_length=300,
     )
-    muscle_group = models.ManyToManyField(
+    muscle_groups = models.ManyToManyField(
         'MuscleGroup',
-        related_name='training_muscle_group',
-    )
-    training_muscles = models.ManyToManyField(
-        'MuscleType',
-        related_name='muscles_trained',
+        related_name='training_days',
     )
     exercises = models.ManyToManyField(
         'Exercise',
-        related_name= 'training_exercise'
+        related_name= 'training_days',
+        blank=True
     )
 
+    def get_absolute_url(self):
+        return reverse('training:details', kwargs={'pk': self.pk})
 
     def __str__(self):
         return f"{self.day} - {self.description}"

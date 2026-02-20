@@ -1,17 +1,235 @@
 {% extends 'common/base.html' %}
-
 {% load static %}
 
 {% block content %}
-<div class="home-page">
-    <img src="{% static 'images/pexels-gustavo-fring-8769370.jpg' %}" class="img-fluid" alt="home page image">
-        <div class="container d-flex flex-column align-items-center">
-            <h1 class="mb-4">Create training split</h1>
-                <form method="post" class="d-flex flex-wrap justify-content-center gap-3" style="width: 30rem;">
-                    {{ form }}
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Create</button>
-                </form>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">Create Training Day</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="trainingDayForm">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <h4>Training Day Details</h4>
+                            {% for field in form %}
+                                <div class="form-group mb-3">
+                                    {{ field.label_tag }}
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="alert alert-danger mt-1">
+                                            {{ field.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            <h4>Select Muscle Groups</h4>
+                            <select name="muscle_groups" multiple class="form-control" size="5">
+                                {% for group in muscle_groups %}
+                                    <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                Select the muscle groups that will be trained in this split. Hold Ctrl/Cmd to select multiple.
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4>Select Exercises</h4>
+                            <p class="text-muted">Choose muscle groups, then muscles, then exercises to build your training day</p>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="muscleGroupSelect">1. Select Muscle Group:</label>
+                                    <select id="muscleGroupSelect" class="form-control" onchange="loadMuscles(this.value)">
+                                        <option value="">Choose a muscle group...</option>
+                                        {% for group in muscle_groups %}
+                                            <option value="{{ group.id }}">{{ group.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="muscleSelect">2. Select Muscle:</label>
+                                    <select id="muscleSelect" class="form-control" disabled onchange="loadExercises(this.value)">
+                                        <option value="">First select a muscle group...</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="exerciseSelect">3. Select Exercise:</label>
+                                    <select id="exerciseSelect" class="form-control" disabled onchange="addExerciseToList()">
+                                        <option value="">First select a muscle...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <h5>Selected Exercises:</h5>
+                                <div id="selectedExercisesList" class="list-group mb-3">
+                                </div>
+                                
+                                <button type="button" class="btn btn-secondary" onclick="clearAllExercises()">
+                                    Clear All Exercises
+                                </button>
+                            </div>
+
+                            <input type="hidden" name="selected_exercises" id="selectedExercisesInput" value="">
+                        </div>
+                        
+                        <hr>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-success me-2">Create Training Day</button>
+                            <a href="{% url 'training:split-list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</div>  
-{% endblock %}  
+</div>
+
+<script>
+
+const muscleData = {{ muscle_data_json|safe }};
+let selectedExercises = [];
+
+function loadMuscles(groupId) {
+    const muscleSelect = document.getElementById('muscleSelect');
+    const exerciseSelect = document.getElementById('exerciseSelect');
+    
+    muscleSelect.innerHTML = '<option value="">Select a muscle...</option>';
+    muscleSelect.disabled = true;
+    exerciseSelect.innerHTML = '<option value="">First select a muscle...</option>';
+    exerciseSelect.disabled = true;
+    
+    if (!groupId) return;
+    
+    const group = muscleData[groupId];
+    if (group && group.muscles) {
+        let options = '<option value="">Select a muscle...</option>';
+        for (const [muscleId, muscle] of Object.entries(group.muscles)) {
+            options += `<option value="${muscleId}">${muscle.name}</option>`;
+        }
+        muscleSelect.innerHTML = options;
+        muscleSelect.disabled = false;
+    }
+}
+
+function loadExercises(muscleId) {
+    const groupSelect = document.getElementById('muscleGroupSelect');
+    const exerciseSelect = document.getElementById('exerciseSelect');
+    
+    exerciseSelect.innerHTML = '<option value="">Select an exercise...</option>';
+    exerciseSelect.disabled = true;
+    
+    if (!muscleId || !groupSelect.value) return;
+    
+    const group = muscleData[groupSelect.value];
+    if (group && group.muscles && group.muscles[muscleId]) {
+        const muscle = group.muscles[muscleId];
+        let options = '<option value="">Select an exercise...</option>';
+        for (const [exerciseId, exercise] of Object.entries(muscle.exercises)) {
+            options += `<option value="${exerciseId}" 
+                data-sets="${exercise.sets}" 
+                data-reps="${exercise.repetitions}">
+                ${exercise.name} (${exercise.sets} sets × ${exercise.repetitions} reps)
+            </option>`;
+        }
+        exerciseSelect.innerHTML = options;
+        exerciseSelect.disabled = false;
+    }
+}
+
+function addExerciseToList() {
+    const exerciseSelect = document.getElementById('exerciseSelect');
+    const groupSelect = document.getElementById('muscleGroupSelect');
+    const muscleSelect = document.getElementById('muscleSelect');
+    
+    const exerciseId = exerciseSelect.value;
+    const exerciseText = exerciseSelect.options[exerciseSelect.selectedIndex]?.text;
+    const muscleName = muscleSelect.options[muscleSelect.selectedIndex]?.text;
+    const groupName = groupSelect.options[groupSelect.selectedIndex]?.text;
+    
+    if (!exerciseId || !exerciseText) {
+        alert('Please select an exercise');
+        return;
+    }
+    
+    if (selectedExercises.some(e => e.id === exerciseId)) {
+        alert('This exercise is already selected!');
+        return;
+    }
+    
+    const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
+    const sets = selectedOption.dataset.sets;
+    const reps = selectedOption.dataset.reps;
+    
+    const exercise = {
+        id: parseInt(exerciseId),
+        name: exerciseText.split(' (')[0],
+        muscle: muscleName,
+        group: groupName,
+        sets: sets,
+        reps: reps
+    };
+    
+    selectedExercises.push(exercise);
+    updateSelectedExercisesList();
+    exerciseSelect.value = '';
+}
+
+function updateSelectedExercisesList() {
+    const listElement = document.getElementById('selectedExercisesList');
+    const inputElement = document.getElementById('selectedExercisesInput');
+    
+    if (selectedExercises.length === 0) {
+        listElement.innerHTML = '<div class="text-muted">No exercises selected yet.</div>';
+        inputElement.value = '';
+        return;
+    }
+    
+    let html = '';
+    selectedExercises.forEach((exercise, index) => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${exercise.name}</strong><br>
+                    <small class="text-muted">
+                        ${exercise.group} → ${exercise.muscle} | 
+                        ${exercise.sets} sets × ${exercise.reps} reps
+                    </small>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeExercise(${index})">
+                    Remove
+                </button>
+            </div>
+        `;
+    });
+    
+    listElement.innerHTML = html;
+    inputElement.value = selectedExercises.map(e => e.id).join(',');
+}
+
+function removeExercise(index) {
+    selectedExercises.splice(index, 1);
+    updateSelectedExercisesList();
+}
+
+function clearAllExercises() {
+    if (confirm('Are you sure you want to clear all exercises?')) {
+        selectedExercises = [];
+        updateSelectedExercisesList();
+    }
+}
+</script>
+{% endblock %}

@@ -43,6 +43,12 @@ class FoodDatabase(BaseModel):
         ]
     )
 
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
 
 class Meal(models.Model):
     ORDER_CHOICES = [
@@ -69,7 +75,7 @@ class Meal(models.Model):
     time = models.TimeField()
 
     def __str__(self):
-        return self.name
+        return f"{self.get_name_display()} - {self.day}"
 
     class Meta:
         ordering = ['order']
@@ -96,7 +102,8 @@ class MealFoodItem(models.Model):
         max_digits=6,
         decimal_places=2
     )
-
+    def __str__(self):
+        return f"{self.food.name} - {self.quantity} {self.measure}"
 
 class NutritionDay(models.Model):
     name = models.CharField(
