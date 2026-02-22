@@ -1,17 +1,9 @@
-import os
 from decimal import Decimal
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fitness_pro.settings')
-import django
-
-django.setup()
-
 from django.contrib import messages
 from django.db.models import When, Case, IntegerField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView, ListView
-
 from choices import WeekDaysChoices
 from nutrition.forms import MealForm, MealFoodItemForm
 from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase

@@ -1,14 +1,6 @@
-import os
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fitness_pro.settings')
-import django
-
-django.setup()
-
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView
-
 from progress.forms import RecordCreateForm
 from progress.models import ProgresTracking
 

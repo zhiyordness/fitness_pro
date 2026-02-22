@@ -1,19 +1,9 @@
-import os
-
 from nutrition.views import NutritionCalculator
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fitness_pro.settings')
-import django
-
-django.setup()
-
 from datetime import date, datetime
-
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views import View
-
 from nutrition.models import Meal
 from progress.models import ProgresTracking
 from training.models import TrainingDay

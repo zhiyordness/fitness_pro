@@ -74,3 +74,4 @@ class ProgresTracking(models.Model):
 
     class Meta:
         ordering = ['-date']
+

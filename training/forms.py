@@ -14,19 +14,14 @@ class TrainingDayCreateForm(forms.ModelForm):
         widgets = {
             'day': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter training day description'}),
-            # 'muscle_groups': forms.CheckboxSelectMultiple(),
-            # 'exercises': forms.CheckboxSelectMultiple(),
         }
         labels = {
             'day': 'Training Day',
             'description': 'Description',
-            # 'muscle_groups': 'Select Muscle Groups',
-            # 'exercises': 'Select Exercises',
         }
         help_texts = {
             'description': 'Provide a brief description of the training day.',
-            # 'muscle_groups': 'Choose the muscle groups that will be targeted in this training day.',
-            # 'exercises': 'Choose the exercises that will be included in this training day.',
+
         }
         error_messages = {
             'day': {
@@ -39,11 +34,7 @@ class TrainingDayCreateForm(forms.ModelForm):
             },
         }
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #
-    #     self.fields['exercises'].queryset = Exercise.objects.none()
-    #     self.fields['exercises'].required = False
+
 
 class ExerciseCreateForm(forms.ModelForm):
     class Meta:

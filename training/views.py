@@ -1,11 +1,8 @@
 import json
-import re
-
 from django.contrib import messages
 from django.db.models import IntegerField, When, Case
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, DetailView, CreateView, ListView, UpdateView
-
 from choices import WeekDaysChoices
 from training.forms import TrainingDayCreateForm, ExerciseCreateForm
 from training.models import TrainingDay, Exercise, MuscleGroup
@@ -268,3 +265,4 @@ class ExerciseDetailsView(DetailView):
 
     def get_success_url(self):
         return reverse_lazy('trainings:exercise-details', kwargs={'pk': self.object.pk})
+
