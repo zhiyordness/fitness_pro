@@ -5,62 +5,64 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="text-center mb-4">Nutrition Overview</h1>
+    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Nutrition Overview</h1>
 
     {% if days %}
         {% for day in days %}
-        <div class="card mb-5 shadow-sm">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h2 class="h4 mb-0">{{ day.name }}</h2>
-                <a href="{% url 'nutrition:day-details' pk=day.pk%}" class="btn btn-warning ">Details</a>
-                <div class="text-end">
-                    {% with totals=day_totals|get_item:day.pk %}
-                        <p class="mb-0"><strong>Calories:</strong> {{ totals.calories|floatformat:0 }} kcal</p>
-                        <p class="mb-0"><strong>Protein:</strong> {{ totals.protein|floatformat:2 }} g</p>
-                        <p class="mb-0"><strong>Carbs:</strong> {{ totals.carbohydrates|floatformat:2 }} g</p>
-                        <p class="mb-0"><strong>Fat:</strong> {{ totals.fat|floatformat:2 }} g</p>
-                    {% endwith %}
-                </div>
-            </div>
-            <div class="card-body">
-                {% if day.meals.all %}
-                    <div class="row gx-3 gy-3">
-                    {% for meal in day.meals.all %}
-                    <div class="card mb-3 meal-card shadow-sm">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-10 col-lg-8">
+                    <div class="card mb-5 bg-success shadow-sm">
                         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                            <h3 class="h5 mb-0">{{ meal.name }}</h3>
-                            <small class="text-muted-white">{{ meal.time|time:"g:i A" }}</small>
+                            <h2 class="h4 mb-0">{{ day.name }}</h2>
+                            <a href="{% url 'nutrition:day-details' pk=day.pk%}" class="btn btn-warning ">Details</a>
+                            <div class="text-end">
+                                {% with totals=day_totals|get_item:day.pk %}
+                                    <p class="mb-0"><strong>Calories:</strong> {{ totals.calories|floatformat:0 }} kcal</p>
+                                    <p class="mb-0"><strong>Protein:</strong> {{ totals.protein|floatformat:2 }} g</p>
+                                    <p class="mb-0"><strong>Carbs:</strong> {{ totals.carbohydrates|floatformat:2 }} g</p>
+                                    <p class="mb-0"><strong>Fat:</strong> {{ totals.fat|floatformat:2 }} g</p>
+                                {% endwith %}
+                            </div>
                         </div>
                         <div class="card-body">
-                            {% if meal.mealfooditem_set.all %}
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Food Item</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for item in meal.mealfooditem_set.all %}
-                                            <tr>
-                                                <td>{{ item.food.name }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                            {% if day.meals.all %}
+                                <div class="row gx-3 gy-3">
+                                {% for meal in day.meals.all %}
+                                <div class="card mb-3 meal-card shadow-sm">
+                                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                        <h3 class="h5 mb-0">{{ meal.name }}</h3>
+                                        <small class="text-muted-white">{{ meal.time|time:"g:i A" }}</small>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if meal.mealfooditem_set.all %}
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-hover">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Food Item</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in meal.mealfooditem_set.all %}
+                                                        <tr>
+                                                            <td>{{ item.food.name }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <p class="text-muted mb-0">No food items recorded for this meal.</p>
+                                        {% endif %}
+                                    </div>
                                 </div>
+                                {% endfor %}
                             {% else %}
-                                <p class="text-muted mb-0">No food items recorded for this meal.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                    </div>
-                {% else %}
                     <p class="text-muted">No meals recorded for this day.</p>
                 {% endif %}
             </div>
         </div>
+                    </div>
         {% endfor %}
         {% if is_paginated %}
         <nav aria-label="Page navigation" class="mt-4">
@@ -95,6 +97,6 @@
             <a href="{% url 'nutrition:day-create' %}" class="btn btn-success ">Add Your First Day</a>
         </div>
     {% endif %}
-</div>
+
 {% endblock %}
 

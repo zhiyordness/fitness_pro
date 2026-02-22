@@ -46,10 +46,12 @@ class Muscle(BaseModel):
 
 
 class TrainingDay(models.Model):
+
     day = models.CharField(
         max_length=15,
         choices=WeekDaysChoices.choices,
     )
+
     description = models.CharField(
         max_length=300,
     )
@@ -68,9 +70,6 @@ class TrainingDay(models.Model):
 
     def __str__(self):
         return f"{self.day} - {self.description}"
-
-
-
 
 
 

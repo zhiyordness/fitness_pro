@@ -9,15 +9,15 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">All Training Days</h4>
-                    <a href="{% url 'training:split-create' %}" class="btn btn-success btn-sm">Add training day</a>
+                    <a href="{% url 'trainings:training-day-create' %}" class="btn btn-success btn-sm">Add training day</a>
                 </div>
-                <div class="card-body">
+                <div class="card-body bg-success">
                     {% if training_splits %}
                         <div class="list-group">
                             {% for split in training_splits %}
                                 <div class="list-group-item d-flex justify-content-between align-items-center mb-2">
                                     <div>
-                                        <h5>{{ split.day }}</h5> {# Assuming 'day' attribute for TrainingDay #}
+                                        <h5>{{ split.day }}</h5>
                                         {% if split.muscle_groups.all %}
                                             <small class="text-muted">
                                                 Muscle Groups:
@@ -30,15 +30,13 @@
                                         {% endif %}
                                     </div>
                                     <div class="btn-group" role="group" aria-label="Split Actions">
-                                        <a href="{% url 'training:details' split.pk %}" class="btn btn-info btn-sm">View</a>
-                                        <a href="{% url 'training:split-edit' split.pk %}" class="btn btn-warning btn-sm">Edit</a>
-                                        <a href="{% url 'training:split-delete' split.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                                        <a href="{% url 'trainings:details' split.pk %}" class="btn btn-warning btn-sm">Details</a>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-center">No training splits defined yet. Start by creating one!</p>
+                        <p class="text-center">No training days defined yet. Start by creating one!</p>
                     {% endif %}
                 </div>
             </div>

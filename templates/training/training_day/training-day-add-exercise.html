@@ -3,19 +3,18 @@
 {% load static %}
 
 {% block content %}
-
-    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Edit exercise</h1>
+    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Create Exercise</h1>
     <div class="container mt-4">
-        <div class="card bg-dark text-dark shadow-sm mb-2">
-            <div class="card-body bg-dark text-white p-4 mb-4">
+        <div class="card bg-dark text-white shadow-sm">
+            <div class="card-body bg-dark text-white p-4">
                 <form method="post" enctype="multipart/form-data">
                     {{ form }}
                     {% csrf_token %}
                     <div class="bg-dark d-grid gap-2 mt-3">
-                        <button type="submit" class="btn btn-success">Edit</button>
+                        <button type="submit" class="btn btn-success">Create</button>
                         <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
                     </div>
-                </form>
+                </form>     
             </div>
         </div>
     </div>

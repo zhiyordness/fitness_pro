@@ -2,12 +2,12 @@
 {% load static %}
 
 {% block content %}
+    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Delete Training Day</h1>
     <div class="container my-5">
-        <h2 class="text-center mb-4">Delete Exercise</h2>
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card p-4 shadow-sm">
-                    <p class="text-center lead">Are you sure you want to delete the training split: <strong>"{{ object.name }}"</strong>?</p>
+                    <p class="text-center lead">Are you sure you want to delete the training split: <strong>"{{ object.day }}"</strong>?</p>
                     <p class="text-center text-danger">This action cannot be undone.</p>
                     <form method="post" class="text-center">
                         {% csrf_token %}

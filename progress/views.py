@@ -1,6 +1,11 @@
+import os
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fitness_pro.settings')
+import django
+
+django.setup()
+
 from django.contrib import messages
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView
 
@@ -9,16 +14,15 @@ from progress.models import ProgresTracking
 
 
 
+class ProgressOverviewView(ListView):
+    model = ProgresTracking
+    template_name = 'progress/progress-overview.html'
+    context_object_name = 'last_record'
 
-def progress_overview(request: HttpRequest) -> HttpResponse:
-    last_record = ProgresTracking.objects.all().order_by('-date').first()
-
-    context = {
-        'last_record': last_record,
-    }
-
-    return render(request, 'progress/progress-overview.html', context)
-
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['last_record'] = ProgresTracking.objects.all().order_by('-date').first()
+        return context
 
 
 class RecordCreateView(CreateView):
@@ -38,20 +42,21 @@ class RecordEditView(UpdateView):
     template_name = 'progress/record/record-edit.html'
     success_url = reverse_lazy('progress:overview')
 
-
     def form_valid(self, form):
         messages.success(self.request, 'Record has been updated successfully!')
         return super().form_valid(form)
 
 
-def record_details(request: HttpRequest, pk: int) -> HttpResponse:
-    record = ProgresTracking.objects.get(pk=pk)
+class RecordDetailsView(ListView):
+    model = ProgresTracking
+    template_name = 'progress/record/record-details.html'
+    context_object_name = 'record'
 
-    context = {
-        'record': record,
-    }
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['record'] = ProgresTracking.objects.get(pk=self.kwargs['pk'])
+        return context
 
-    return render(request, 'progress/record/record-details.html', context)
 
 class RecordListView(ListView):
     model = ProgresTracking
@@ -59,15 +64,6 @@ class RecordListView(ListView):
     context_object_name = 'record'
     paginate_by = 1
     ordering = ['-day']
-
-# def records_list(request: HttpRequest) -> HttpResponse:
-#     all_records = ProgresTracking.objects.all().order_by('-day')
-#
-#     context = {
-#         'object_list': all_records,
-#     }
-#
-#     return render(request, 'progress/record/records-list.html', context)
 
 
 class RecordDeleteView(DeleteView):

@@ -1,0 +1,55 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="mb-0">{{ training_day.day }} Training Details</h2>
+                </div>
+
+                <div class="card-body">
+                <strong>Description:</strong>
+                    <br>
+                        <span class="badge bg-warning text-dark mb-2"> {{ training_day.description }}</span>
+                    <hr>
+                <strong>Muscle Groups:</strong>
+                    <br>
+                    {% if muscle_groups %}
+                        {% for group in muscle_groups.all %}
+                            <span class="badge bg-warning text-dark"> {{ group.name }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <p>No muscle groups specified.</p>
+                    {% endif %}
+                    <hr>
+                <strong>Exercises:</strong>
+                    <br>
+                    {% if exercises %}
+                        {% for exercise in exercises.all %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-dark text-white"> {{ exercise.name }}</span>
+                                <a href="{% url 'trainings:exercise-details' pk=exercise.pk %}" class="btn btn-sm btn-warning me-1">View Details</a>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No exercises added yet.</p>
+                    {% endif %}
+
+
+                    <hr>
+                    <div class="d-flex justify-content-end mb-3">
+                        <a href="{% url 'trainings:training-day-edit' pk=training_day.pk %}" class="btn btn-warning me-1">Edit</a>
+                        <a href="{% url 'trainings:training-day-delete' pk=training_day.pk %}" class="btn btn-danger me-1">Delete</a>
+                        <a href="{% url 'trainings:list'  %}" class="btn btn-secondary me-1">Back</a>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

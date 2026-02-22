@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container my-5">
-    <h1 class="text-center mb-4">Edit {{ object.name }} Day</h1> {# Using object.name #}
+    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Edit {{ object.name }} Day</h1>
 
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -12,10 +12,10 @@
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        {{ form.as_p }} {# Renders form fields as paragraphs #}
+                        {{ form.as_p }}
                         <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary">Update Day</button>
-                            <a href="{% url 'nutrition:day-details' pk=object.pk %}" class="btn btn-secondary">Cancel</a> {# Using object.pk #}
+                            <button type="submit" class="btn btn-warning">Update Day</button>
+                            <a href="{% url 'nutrition:day-details' pk=object.pk %}" class="btn btn-secondary">Cancel</a>
                         </div>
                         </div>
                     </form>

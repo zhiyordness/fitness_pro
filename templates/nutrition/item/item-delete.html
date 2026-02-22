@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container my-5">
-    <h1 class="text-center mb-4">Delete Food Item</h1>
+    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Delete Food Item</h1>
 
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -19,8 +19,7 @@
                         {% csrf_token %}
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-danger">Confirm Delete</button>
-                            {# Assuming redirection back to the meal's day details or similar #}
-                            <a href="{% url 'nutrition:nutrition-home' %}" class="btn btn-secondary">Cancel</a>
+                            <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>

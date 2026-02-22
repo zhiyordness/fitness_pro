@@ -1,3 +1,11 @@
+import os
+from decimal import Decimal
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fitness_pro.settings')
+import django
+
+django.setup()
+
 from django.contrib import messages
 from django.db.models import When, Case, IntegerField
 from django.shortcuts import get_object_or_404
@@ -21,10 +29,17 @@ class NutritionCalculator:
         }
 
         for item in meal.mealfooditem_set.all():
-            totals['calories'] += item.food.calories * item.quantity
-            totals['protein'] += item.food.protein * item.quantity
-            totals['carbohydrates'] += item.food.carbohydrates * item.quantity
-            totals['fat'] += item.food.fat * item.quantity
+
+            item_quantity = 0
+            if item.measure == 'Gr.':
+                item_quantity = item.quantity / 100
+            else:
+                item_quantity = item.quantity
+
+            totals['calories'] += item.food.calories * Decimal(item_quantity)
+            totals['protein'] += item.food.protein * Decimal(item_quantity)
+            totals['carbohydrates'] += item.food.carbohydrates * Decimal(item_quantity)
+            totals['fat'] += item.food.fat * Decimal(item_quantity)
         return totals
 
     @staticmethod

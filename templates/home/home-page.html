@@ -2,87 +2,131 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Hero Section -->
+<div class="container mt-4 d-flex flex-column align-items-center">
     <div class="jumbotron bg-dark text-white text-center p-5 rounded">
         <h1 class="display-4">Welcome to Fitness Pro</h1>
-        <p class="lead">Track your training days, exercises, and muscle groups</p>
+        <p class="lead">Track your training days, nutrition and progress</p>
+        <span class="badge bg-light text-dark mb-3">{{ today_date|date:"D, d-m-Y H:i" }}</span>
         {% if not training_days %}
         <hr class="my-4 bg-white">
         <p>Get started by creating your first training day</p>
-        <a class="btn btn-light btn-lg" href="{% url 'training:split-create' %}" role="button">
+        <a class="btn btn-light btn-lg" href="{% url 'trainings:training-day-create' %}" role="button">
             Create Training Day
         </a>
         {% endif %}
     </div>
-
-    <!-- Stats Section -->
-    <!-- Recent Training Days -->
-<div class="card bg-light mb-5">
-    <div class="card-header bg-dark text-white">
-        <div class="row">
-            <div class="col-12">
-                <h2 class="text-white mb-0">Today's Training</h2>
+</div>
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-light mb-2">
+            <img src="{% static 'images/pexels-gustavo-fring-8769370.jpg' %}" class="card-img-top"  alt="Next Meal">
+                <div class="card-header bg-dark text-white">
+                    <div class="row">
+                        <div class="col-12">
+                            <h2 class="text-white mb-3">Today's Training: {{ training_day.day }}</h2>
+                            <span class="card-text">{{ training_day.description|capfirst }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body bg-light text-dark">
+                    <div class="row">
+                        {% if training_day %}
+                            <div class="col-md-12 mb-0">
+                                    <div class="card-body">
+                                        {% if training_day.exercises %}
+                                            <p class="card-text">
+                                                <small class="text-dark">
+                                                    Number of exercises:
+                                                    <span class="badge bg-warning text-dark">{{ training_day.exercises.count }}</span>
+                                                </small>
+                                            <br>
+                                                <small class="text-dark">
+                                                    Muscle Groups:
+                                                    {% for group in training_day.muscle_groups.all %}
+                                                        <span class="badge bg-warning text-dark">{{ group.name }}</span>
+                                                    {% empty %}
+                                                        <p>No muscle groups assigned to this training day.</p>
+                                                    {% endfor %}
+                                                </small>
+                                            <br>
+                                                <small class="text-dark">
+                                                        Exercises:
+                                                        {% for exercise in training_day.exercises.all %}
+                                                        <span class="badge bg-warning text-dark">{{ exercise }} - {{ exercise.sets }} sets</span>
+                                                        {% empty %}
+                                                            <p>No exercises assigned to this training day.</p>
+                                                        {% endfor %}
+                                                </small>
+                                            </p>
+                                        {% endif %}
+                                        <a href="{% url 'trainings:details' training_day.pk%}" class="btn btn-success btn-sm">
+                                            View Details
+                                        </a>
+                                    </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12">
+                                <p class="text-dark">No training today.
+                                    <a href="{% url 'training:training_day-create' %}">Create one now!</a>
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="card-body bg-light text-white">
-        <div class="row">
-            {% if training_day %}
-                <div class="col-md-4 mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title text-dark">{{ training_day.day }}</h5>
-                            <p class="card-text">{{ day.description|truncatechars:50 }}</p>
-                            <p class="card-text">
-                                <small class="text-dark">
-                                    {{ training_day.exercises.count }} exercises
-                                </small>
-                            </p>
-                            <a href="{% url 'training:details' training_day.pk%}" class="btn btn-primary btn-sm">
-                                View Details
-                            </a>
-                        </div>
-                </div>
-            {% else %}
-                <div class="col-12">
-                    <p class="text-light">No training today.
-                        <a href="{% url 'training:split-create' %}">Create one now!</a>
-                    </p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
 </div>
-
-
-    <!-- Popular Exercises -->
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">Popular Exercises</h2>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
             <div class="row">
-                {% for exercise in popular_exercises %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ exercise.name }}</h5>
-                                <p class="card-text">
-                                    Sets: {{ exercise.sets }} | Reps: {{ exercise.repetitions }}
-                                </p>
-                                <p class="card-text">
-                                    <small class="text-muted">
-                                        Muscles:
-                                        {% for muscle in exercise.muscles.all %}
-                                            {{ muscle.name }}{% if not forloop.last %}, {% endif %}
-                                        {% endfor %}
-                                    </small>
-                                </p>
-                                <a href="{% url 'training:exercise-details' exercise.pk %}" class="btn btn-info btn-sm">
-                                    View Exercise
-                                </a>
-                            </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="{% static 'images/96c38b59-6b2b-4720-b2d7-371a7b894fc0.jpeg' %}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="Next Meal">
+                        <div class="card-header bg-dark text-white mb-3">
+                            <h5 class="card-title">Nutrition</h5>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            {% if next_meal %}
+                                <h5 class="card-title">Next Meal: {{ next_meal.name }}</h5>
+                                <p class="card-text">Time: {{ next_meal.time }}</p>
+                            {% else %}
+                                <h5 class="card-title">Next Meal: None</h5>
+                                <p class="card-text">Time: None</p>
+                            {% endif %}
+                            <small class="text-dark">
+                                Includes:
+                                {% for item in meal_items.all %}
+                                <span class="badge bg-warning text-dark">{{ item }} </span>
+                                {% empty %}
+                                    <span class="badge bg-warning text-dark">No food items for this meal.</span>
+                                {% endfor %}
+                            </small>
+                        <br>
+                            <small class="text-dark">
+                                Total Calories:
+                                <span class="badge bg-warning text-dark">{{ total_calories|floatformat:2 }} kcal.</span>
+                            </small>
+                            <br>
+                            <a href="{% url 'nutrition:nutrition-home' %}" class="btn btn-success mt-auto">View Nutrition</a>
                         </div>
                     </div>
-                {% endfor %}
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="{% static 'images/Weight-Loss-Program.jpg' %}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="Progress Tracking">
+                        <div class="card-header bg-dark text-white mb-3">
+                            <h5 class="card-title">Your Progress</h5>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <p class="card-text">Current Weight: {{ current_weight_record.weight }} kg.</p>
+                            <p class="card-text">Weight Change: {{ weight_change }} kg from last record</p>
+                            <a href="{% url 'progress:overview' %}" class="btn btn-success mt-auto">View Progress</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

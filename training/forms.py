@@ -1,108 +1,90 @@
-from logging import disable
+
 
 from django import forms
-from django.utils.translation import round_away_from_one
+
 
 from training.models import TrainingDay, Exercise
 
 
 class TrainingDayCreateForm(forms.ModelForm):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['day'].widget.attrs.update({'class': 'form-control'})
-        self.fields['description'].widget.attrs.update({'class': 'form-control'})
-
-        self.fields['day'].label = 'Day'
-        self.fields['description'].label = 'Description'
-
-        self.fields['day'].help_text = 'Select the day of the week for this training split.'
-        self.fields['description'].help_text = 'Provide a brief description of the training split.'
-
-        self.fields['day'].error_messages.update({'required': 'Day is required.'})
-        self.fields['description'].error_messages.update({'required': 'Description is required.'})
-
-        self.fields['description'].widget = forms.Textarea(attrs={
-            'placeholder': 'Enter training split description',
-            'rows': 3,
-            'class': 'form-control'
-        })
-
     class Meta:
         model = TrainingDay
         fields = ['day', 'description']
+        widgets = {
+            'day': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter training day description'}),
+            # 'muscle_groups': forms.CheckboxSelectMultiple(),
+            # 'exercises': forms.CheckboxSelectMultiple(),
+        }
+        labels = {
+            'day': 'Training Day',
+            'description': 'Description',
+            # 'muscle_groups': 'Select Muscle Groups',
+            # 'exercises': 'Select Exercises',
+        }
+        help_texts = {
+            'description': 'Provide a brief description of the training day.',
+            # 'muscle_groups': 'Choose the muscle groups that will be targeted in this training day.',
+            # 'exercises': 'Choose the exercises that will be included in this training day.',
+        }
+        error_messages = {
+            'day': {
+                'required': 'Please select a training day.',
+                'invalid_choice': 'Please select a valid training day.',
+            },
+            'description': {
+                'required': 'Please provide a description for the training day.',
+                'max_length': 'Description cannot exceed 300 characters.',
+            },
+        }
 
-
-
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #
+    #     self.fields['exercises'].queryset = Exercise.objects.none()
+    #     self.fields['exercises'].required = False
 
 class ExerciseCreateForm(forms.ModelForm):
     class Meta:
         model = Exercise
-        exclude = ['created_on', 'updated_on']
+        fields = ['name', 'muscles', 'sets', 'repetitions', 'video_link']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. Bench Press',}),
+            'muscles': forms.SelectMultiple(attrs={
+                'class': 'form-control', 'size': 10,
+                'help_text': 'Hold down "Control", or "Command" on a Mac, to select more than one.'}),
+            'sets': forms.NumberInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. 3', 'min': 1}),
+            'repetitions': forms.NumberInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. 10', 'min': 1}),
+            'video_link': forms.URLInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. https://www.youtube.com/...'}),
+        }
 
         labels = {
             'name': 'Exercise Name',
-            'sets': 'Sets',
-            'repetitions': 'Repetitions',
-            'video_link': 'Video Link',
-            'type_of_muscle': 'Primary Muscle Type',
-            'muscles_group': 'Muscle Group',
-            'description': 'Description',
-            'secondary_muscles': 'Secondary Muscles',
+            'muscles': 'Target Muscles',
+            'sets': 'Number of Sets',
+            'repetitions': 'Number of Repetitions',
+            'video_link': 'Video Tutorial Link',
         }
-
-        widgets = {
-            'name': forms.TextInput(
-                attrs={
-                    'placeholder': 'Enter exercise name',
-                },
-            ),
-            'sets': forms.NumberInput(
-                attrs={
-                    'placeholder': 'Enter number of sets',
-                }
-            ),
-            'repetitions': forms.NumberInput(
-                attrs={
-                    'placeholder': 'Enter number of repetitions',
-                }
-            ),
-            'video_link': forms.URLInput(
-                attrs={
-                    'placeholder': 'Enter video link for the exercise',
-                }
-            ),
-            'type_of_muscle': forms.Select(),
-            'muscles_group': forms.Select(),
-            'description': forms.Textarea(
-                attrs={
-                    'placeholder': 'Enter exercise description',
-                    'rows': 3,
-                }
-            ),
-            'secondary_muscles': forms.SelectMultiple(
-                attrs={
-                    'size': 10,
-                },
-            ),
+        help_texts = {
+            'sets': 'Recommended: 3-4 sets per exercise.',
+            'repetitions': 'Recommended: 8-12 repetitions for muscle growth, 12-15 for endurance.',
         }
         error_messages = {
             'name': {
-                'required': 'Exercise name is required.',
+                'required': 'Please enter the name of the exercise.',
+                'max_length': 'Exercise name cannot exceed 100 characters.',
             },
             'sets': {
-                'required': 'Number of sets is required.',
-                'invalid': 'Enter a valid number for sets.',
+                'required': 'Please enter the number of sets.',
+                'min_value': 'Number of sets must be at least 1.',
             },
             'repetitions': {
-                'required': 'Number of repetitions is required.',
-                'invalid': 'Enter a valid number for repetitions.',
-            },
-            'video_link': {
-                'required': 'Video link is required.',
-                'invalid': 'Enter a valid URL for the video link.',
-            },
-            'type_of_muscle': {
-                'required': 'Primary muscle type is required.',
+                'required': 'Please enter the number of repetitions.',
+                'min_value': 'Number of repetitions must be at least 1.',
             },
         }

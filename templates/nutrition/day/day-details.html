@@ -4,7 +4,7 @@
 
 {% block content %}
     <div class="container mt-4">
-                    <div class="card mb-4">
+                    <div class="card bg-success mb-4">
                         <div class="card-header bg-dark text-white d-flex justify-content-between">
                             <h2>{{ day.name }}</h2>
                             <div class="card-footer d-flex justify-content-end gap-2">
@@ -94,11 +94,11 @@
                     {% endfor %}
                 {% endif %}
             </div>
-            <div class="text-center mt-4">
-                 <a href="{% url 'nutrition:day-create' %}" class="btn btn-success">Create New Day</a>
-                 <a href="{% url 'nutrition:meal-create' day_pk=day.pk %}" class="btn btn-success">Add New Meal</a>
-                 <a href="{% url 'nutrition:nutrition-home' %}" class="btn btn-secondary">Back</a>
-            </div>
         </div>
+    </div>
+    <div class="text-center mt-4 mb-4">
+         <a href="{% url 'nutrition:day-create' %}" class="btn btn-success">Create New Day</a>
+         <a href="{% url 'nutrition:meal-create' day_pk=day.pk %}" class="btn btn-success">Add New Meal</a>
+         <a href="{% url 'nutrition:nutrition-home' %}" class="btn btn-secondary">Back</a>
     </div>
 {% endblock %}

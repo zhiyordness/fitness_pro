@@ -20,6 +20,6 @@ class MealTypeChoices(models.TextChoices):
 
 
 class MeasurementsChoices(models.TextChoices):
-    GRAM = "Kg.", "Kilograms"
+    GRAM = "Gr.", "Grams"
     PIECE = "Pcs.", "Pieces"
-    ML = "Ltr.", "Liters"
+    ML = "Ml.", "Milliliters"

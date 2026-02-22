@@ -15,7 +15,6 @@ class FoodDatabase(BaseModel):
             MinValueValidator(0)
         ]
     )
-
     protein = models.DecimalField(
         max_digits=6,
         decimal_places=2,
@@ -24,7 +23,6 @@ class FoodDatabase(BaseModel):
             MinValueValidator(0)
         ]
     )
-
     carbohydrates = models.DecimalField(
         max_digits=6,
         decimal_places=2,
@@ -33,7 +31,6 @@ class FoodDatabase(BaseModel):
             MinValueValidator(0)
         ]
     )
-
     fat = models.DecimalField(
         max_digits=6,
         decimal_places=2,
@@ -82,9 +79,6 @@ class Meal(models.Model):
 
 
 
-
-
-
 class MealFoodItem(models.Model):
     meal = models.ForeignKey(
         'Meal',
@@ -104,6 +98,8 @@ class MealFoodItem(models.Model):
     )
     def __str__(self):
         return f"{self.food.name} - {self.quantity} {self.measure}"
+
+
 
 class NutritionDay(models.Model):
     name = models.CharField(

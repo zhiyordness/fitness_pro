@@ -2,12 +2,12 @@
 {% load static %}
 
 {% block content %}
-<h1 class="text-center my-4">Record details</h1>
+<h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Record details</h1>
 
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-dark text-white">
                 <h4 class="mb-0">Progress Record - {{ record.date|date:"F d, Y - H:i" }}</h4>
             </div>
             <div class="card-body">

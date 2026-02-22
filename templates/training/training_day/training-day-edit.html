@@ -1,0 +1,341 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="mb-0">Edit Training Day</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="trainingDayForm">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            {% for field in form %}
+                                <div class="form-group mb-3">
+                                    <strong>{{ field.label_tag }}</strong>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="alert alert-danger mt-1">
+                                            {{ field.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            <h6><strong>Select Muscle Groups:</strong></h6>
+                            <select name="muscle_groups" multiple class="form-control" size="5" id="muscleGroupsSelect">
+                                {% for group in muscle_groups %}
+                                    <option value="{{ group.id }}"
+                                        {% if group.id in selected_muscle_groups %}selected{% endif %}>
+                                        {{ group.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                Select the muscle groups that will be trained in this split. Hold Ctrl/Cmd to select multiple.
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6><strong>Select Exercises:</strong></h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="muscleGroupSelect">1. Select Muscle Group:</label>
+                                    <select id="muscleGroupSelect" class="form-control">
+                                        <option value="">Choose a muscle group...</option>
+                                        {% for group in muscle_groups %}
+                                            <option value="{{ group.id }}">{{ group.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="muscleSelect">2. Select Muscle:</label>
+                                    <select id="muscleSelect" class="form-control" disabled>
+                                        <option value="">First select a muscle group...</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="exerciseSelect">3. Select Exercise:</label>
+                                    <select id="exerciseSelect" class="form-control" disabled>
+                                        <option value="">First select a muscle...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-success" id="addExerciseBtn" disabled>
+                                        Add Selected Exercise
+                                    </button>
+                                </div>
+                            </div>
+
+                            <small class="form-text text-muted">
+                                Choose muscle groups, then muscles, then exercises to build your training day
+                            </small>
+
+                            <div class="mt-4">
+                                <h6><strong>Selected Exercises:</strong></h6>
+                                <hr>
+                                <div id="selectedExercisesList" class="list-group mb-3">
+                                    <!-- Selected exercises will be displayed here -->
+                                </div>
+
+                                <button type="button" class="btn btn-danger" onclick="clearAllExercises()">
+                                    Clear All Exercises
+                                </button>
+                            </div>
+
+                            <input type="hidden" name="selected_exercises" id="selectedExercisesInput" value="">
+                        </div>
+
+                        <hr>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-success me-2">Update Training Day</button>
+                            <a href="{% url 'trainings:details' training_day.pk %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Parse the muscle data
+const muscleData = {{ muscle_data_json|safe }};
+console.log('Muscle Data:', muscleData);
+
+let selectedExercises = [];
+
+// Initialize with existing exercises
+{% if selected_exercises_json %}
+    const initialExercises = {{ selected_exercises_json|safe }};
+    console.log('Initial Exercises:', initialExercises);
+
+    // Add initial exercises to selectedExercises
+    initialExercises.forEach(ex => {
+        selectedExercises.push({
+            id: ex.id,
+            name: ex.name,
+            muscle: ex.muscle_name || 'Unknown',
+            group: ex.group_name || 'Unknown',
+            sets: ex.sets,
+            reps: ex.repetitions
+        });
+    });
+    console.log('Selected Exercises after initialization:', selectedExercises);
+    updateSelectedExercisesList();
+{% endif %}
+
+// Get DOM elements
+const muscleGroupSelect = document.getElementById('muscleGroupSelect');
+const muscleSelect = document.getElementById('muscleSelect');
+const exerciseSelect = document.getElementById('exerciseSelect');
+const addExerciseBtn = document.getElementById('addExerciseBtn');
+
+// Event listeners
+muscleGroupSelect.addEventListener('change', function() {
+    console.log('Muscle group changed to:', this.value);
+    loadMuscles(this.value);
+});
+
+muscleSelect.addEventListener('change', function() {
+    console.log('Muscle changed to:', this.value);
+    loadExercises(this.value);
+});
+
+addExerciseBtn.addEventListener('click', function() {
+    console.log('Add exercise button clicked');
+    addExerciseToList();
+});
+
+function loadMuscles(groupId) {
+    console.log('Loading muscles for group:', groupId);
+
+    // Reset muscle and exercise selects
+    muscleSelect.innerHTML = '<option value="">Select a muscle...</option>';
+    muscleSelect.disabled = true;
+    exerciseSelect.innerHTML = '<option value="">First select a muscle...</option>';
+    exerciseSelect.disabled = true;
+    addExerciseBtn.disabled = true;
+
+    if (!groupId) return;
+
+    const group = muscleData[groupId];
+    console.log('Group data:', group);
+
+    if (group && group.muscles) {
+        let options = '<option value="">Select a muscle...</option>';
+
+        // Iterate through muscles object
+        for (const [muscleId, muscle] of Object.entries(group.muscles)) {
+            options += `<option value="${muscleId}">${muscle.name}</option>`;
+        }
+
+        muscleSelect.innerHTML = options;
+        muscleSelect.disabled = false;
+    } else {
+        console.log('No muscles found for group');
+        muscleSelect.innerHTML = '<option value="">No muscles found</option>';
+    }
+}
+
+function loadExercises(muscleId) {
+    console.log('Loading exercises for muscle:', muscleId);
+
+    // Reset exercise select
+    exerciseSelect.innerHTML = '<option value="">Select an exercise...</option>';
+    exerciseSelect.disabled = true;
+    addExerciseBtn.disabled = true;
+
+    if (!muscleId || !muscleGroupSelect.value) return;
+
+    const group = muscleData[muscleGroupSelect.value];
+    console.log('Group data:', group);
+
+    if (group && group.muscles && group.muscles[muscleId]) {
+        const muscle = group.muscles[muscleId];
+        console.log('Muscle data:', muscle);
+
+        if (muscle && muscle.exercises) {
+            let options = '<option value="">Select an exercise...</option>';
+
+            // Check if there are any exercises
+            const exercises = Object.entries(muscle.exercises);
+            if (exercises.length > 0) {
+                exercises.forEach(([exerciseId, exercise]) => {
+                    options += `<option value="${exerciseId}"
+                        data-sets="${exercise.sets}"
+                        data-reps="${exercise.repetitions}">
+                        ${exercise.name} (${exercise.sets} sets × ${exercise.repetitions} reps)
+                    </option>`;
+                });
+                exerciseSelect.innerHTML = options;
+                exerciseSelect.disabled = false;
+                addExerciseBtn.disabled = false;
+            } else {
+                exerciseSelect.innerHTML = '<option value="">No exercises available</option>';
+            }
+        } else {
+            console.log('No exercises found for muscle');
+            exerciseSelect.innerHTML = '<option value="">No exercises found</option>';
+        }
+    } else {
+        console.log('Muscle not found');
+        exerciseSelect.innerHTML = '<option value="">Muscle not found</option>';
+    }
+}
+
+function addExerciseToList() {
+    console.log('Adding exercise to list');
+
+    if (!exerciseSelect.value) {
+        alert('Please select an exercise first');
+        return;
+    }
+
+    const selectedOption = exerciseSelect.options[exerciseSelect.selectedIndex];
+    const exerciseId = exerciseSelect.value;
+    const exerciseName = selectedOption.text.split(' (')[0];
+    const muscleName = muscleSelect.options[muscleSelect.selectedIndex]?.text;
+    const groupName = muscleGroupSelect.options[muscleGroupSelect.selectedIndex]?.text;
+    const sets = selectedOption.dataset.sets;
+    const reps = selectedOption.dataset.reps;
+
+    console.log('Selected exercise details:', {
+        id: exerciseId,
+        name: exerciseName,
+        muscle: muscleName,
+        group: groupName,
+        sets: sets,
+        reps: reps
+    });
+
+    // Check if exercise is already selected
+    if (selectedExercises.some(e => e.id == exerciseId)) {
+        alert('This exercise is already selected!');
+        return;
+    }
+
+    // Add the exercise
+    const exercise = {
+        id: parseInt(exerciseId),
+        name: exerciseName,
+        muscle: muscleName,
+        group: groupName,
+        sets: sets,
+        reps: reps
+    };
+
+    selectedExercises.push(exercise);
+    console.log('Updated selected exercises:', selectedExercises);
+    updateSelectedExercisesList();
+
+    // Reset the exercise select
+    exerciseSelect.value = '';
+}
+
+function updateSelectedExercisesList() {
+    const listElement = document.getElementById('selectedExercisesList');
+    const inputElement = document.getElementById('selectedExercisesInput');
+
+    if (selectedExercises.length === 0) {
+        listElement.innerHTML = '<div class="text-muted">No exercises selected yet.</div>';
+        inputElement.value = '';
+        return;
+    }
+
+    let html = '';
+    selectedExercises.forEach((exercise, index) => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${exercise.name}</strong><br>
+                    <small class="text-muted">
+                        ${exercise.group} → ${exercise.muscle} |
+                        ${exercise.sets} sets × ${exercise.reps} reps
+                    </small>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeExercise(${index})">
+                    Remove
+                </button>
+            </div>
+        `;
+    });
+
+    listElement.innerHTML = html;
+    inputElement.value = selectedExercises.map(e => e.id).join(',');
+    console.log('Hidden input value:', inputElement.value);
+}
+
+function removeExercise(index) {
+    selectedExercises.splice(index, 1);
+    updateSelectedExercisesList();
+}
+
+function clearAllExercises() {
+    if (confirm('Are you sure you want to clear all exercises?')) {
+        selectedExercises = [];
+        updateSelectedExercisesList();
+    }
+}
+
+// Optional: Sync muscle groups selection with available exercises
+document.getElementById('muscleGroupsSelect').addEventListener('change', function() {
+    // You could add logic here to filter available exercises based on selected muscle groups
+    console.log('Selected muscle groups:', Array.from(this.selectedOptions).map(opt => opt.value));
+});
+</script>
+{% endblock %}

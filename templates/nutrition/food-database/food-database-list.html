@@ -4,12 +4,12 @@
 
 {% block content %}
 <div class="container my-5">
-    <h1 class="text-center mb-4">Food Database</h1>
+    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Food Database</h1>
 
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Available Food Items</h4>
                     {# Assuming a URL for creating new food items, e.g., 'nutrition:food-create' #}
                     <a href="{% url 'nutrition:food-database-create' %}" class="btn btn-success btn-sm">Add New Food</a>

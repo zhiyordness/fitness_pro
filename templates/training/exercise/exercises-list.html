@@ -1,0 +1,90 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-6 offset-md-3">
+            <form method="GET" action="{% url 'trainings:exercise-list' %}">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search exercises by name or muscle..." name="q" value="{{ search_query }}">
+                    <button class="btn btn-success" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% if exercises %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
+                <h1 class="mb-0">All Exercises</h1>
+                <a href="{% url 'trainings:exercise-create' %}" class="btn btn-success btn-sm">Add Exercise</a>
+            </div>
+            <div class="card-body bg-light shadow-sm">
+                <ul class="list-group list-group-flush">
+                    {% for exercise in exercises %}
+                    <li class="list-group-item bg-light text-dark d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5>{{ exercise.name }}</h5>
+                            <p class="text-muted-dark mb-1">Muscles:</p>
+                                {% for muscle in exercise.muscles.all %}
+                                    <span class="badge bg-success me-1">{{ muscle.name }}</span>
+                                {% endfor %}
+                            <p class="mb-0">{{ exercise.description|truncatechars:100 }}</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'trainings:exercise-details' pk=exercise.pk %}" class="btn btn-success btn-sm me-2">View</a>
+                            <a href="{% url 'trainings:exercise-edit' pk=exercise.pk %}" class="btn btn-warning btn-sm me-2">Edit</a>
+                            <a href="{% url 'trainings:exercise-delete' pk=exercise.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+</div>
+        {# Paginator section #}
+        {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    {% endif %}
+
+                    {% for i in paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+    <div class="alert alert-dark text-center" role="alert">
+        No exercises found.
+        <hr>
+        <a href="{% url 'trainings:exercise-create' %}" class="btn btn-outline-light mt-3">Add First Exercise</a>
+    </div>
+    {% endif %}
+
+{% endblock %}

@@ -7,16 +7,19 @@
     <div class="nav-links">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0 flex-row">
             <li class="nav-item">
-                <a class="nav-link active text-nowrap" href="{% url 'training:split-list' %}">Training split</a>
+                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:list' %}">Training Days</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active text-nowrap" href="{% url 'nutrition:nutrition-home' %}">Nutrition</a>
+                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:exercise-list' %}">Exercises Library</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active text-nowrap" href="{% url 'nutrition:food-database-list' %}">Foods</a>
+                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:nutrition-home' %}">Nutrition</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active text-nowrap" href="{% url 'progress:overview' %}">Progress tracker</a>
+                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:food-database-list' %}">Food library</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'progress:overview' %}">Progress tracker</a>
             </li>
         </ul>
     </div>
