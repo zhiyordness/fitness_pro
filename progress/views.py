@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
 from progress.forms import RecordCreateForm
 from progress.models import ProgresTracking
 
@@ -39,7 +39,7 @@ class RecordEditView(UpdateView):
         return super().form_valid(form)
 
 
-class RecordDetailsView(ListView):
+class RecordDetailsView(DetailView):
     model = ProgresTracking
     template_name = 'progress/record/record-details.html'
     context_object_name = 'record'

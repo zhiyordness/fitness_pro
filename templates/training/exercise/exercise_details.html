@@ -13,9 +13,9 @@
                 <p><strong>Repetitions:</strong> {{ exercise.repetitions }}</p>
                 <p><strong>Video Link:</strong> <a href="{{ exercise.video_link }}" target="_blank">{{ exercise.video_link }}</a></p>
 
-                {% if exercise.secondary_muscles.all %}
-                <p><strong>Secondary Muscles:</strong>
-                    {% for muscle in exercise.secondary_muscles.all %}
+                {% if exercise.muscles.all %}
+                <p><strong>Muscles:</strong>
+                    {% for muscle in exercise.muscles.all %}
                     <span class="badge bg-info text-dark me-1">{{ muscle.name }}</span>{% if not forloop.last %},{% endif %}
                     {% endfor %}
                 </p>
