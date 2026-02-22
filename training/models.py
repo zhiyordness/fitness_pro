@@ -6,7 +6,7 @@ from choices import WeekDaysChoices
 from common.models import BaseModel
 
 
-# Create your models here.
+
 
 class Exercise(BaseModel):
     muscles = models.ManyToManyField(

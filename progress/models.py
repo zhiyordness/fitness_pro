@@ -4,7 +4,7 @@ from django.db import models
 from choices import WeekDaysChoices
 
 
-# Create your models here.
+
 class ProgresTracking(models.Model):
     day = models.CharField(
         max_length=50,

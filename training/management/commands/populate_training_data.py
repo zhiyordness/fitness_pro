@@ -49,9 +49,9 @@ class Command(BaseCommand):
                     {"name": "Reverse Pec Deck Flyes (Traps focus)", "sets": 3, "repetitions": 12, "video_link": "https://www.youtube.com/watch?v=b4wSgL_m35o"},
                 ],
                 "Trapezius (Lower)": [
-                    {"name": "Y-Raises", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=P_J_P2V7c0w"}, # Placeholder, need a proper Y-raise video
+                    {"name": "Y-Raises", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=P_J_P2V7c0w"},
                     {"name": "Superman", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=z6m6jWf3R34"},
-                    {"name": "Scapular Pull-downs", "sets": 3, "repetitions": 12, "video_link": "https://www.youtube.com/watch?v=gH5Jz5-tE3c"}, # Placeholder
+                    {"name": "Scapular Pull-downs", "sets": 3, "repetitions": 12, "video_link": "https://www.youtube.com/watch?v=gH5Jz5-tE3c"},
                 ],
                 "Rhomboids": [
                     {"name": "Bent-Over Dumbbell Rows", "sets": 3, "repetitions": 10, "video_link": "https://www.youtube.com/watch?v=pYjec9B0Crs"},
@@ -105,7 +105,7 @@ class Command(BaseCommand):
                 "Triceps Brachii (Medial Head)": [
                     {"name": "Reverse Grip Pushdowns", "sets": 3, "repetitions": 12, "video_link": "https://www.youtube.com/watch?v=0h2Q0_I3Nl4"},
                     {"name": "Dumbbell Triceps Kickbacks", "sets": 3, "repetitions": 12, "video_link": "https://www.youtube.com/watch?v=GjY-lC3p-kQ"},
-                    {"name": "Single Arm Overhead Extension (Cable)", "sets": 3, "repetitions": 12, "video_link": "https://www.youtube.com/watch?v=2-dhv-6A42E"}, # Placeholder
+                    {"name": "Single Arm Overhead Extension (Cable)", "sets": 3, "repetitions": 12, "video_link": "https://www.youtube.com/watch?v=2-dhv-6A42E"},
                 ],
                 "Forearm Flexors": [
                     {"name": "Wrist Curls (Barbell)", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=l42c9N3pQe4"},
@@ -114,7 +114,7 @@ class Command(BaseCommand):
                 ],
                 "Forearm Extensors": [
                     {"name": "Reverse Wrist Curls", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=2SgP_K8iN_A"},
-                    {"name": "Plate Pinches", "sets": 3, "repetitions": 30, "video_link": "https://www.youtube.com/watch?v=b4wSgL_m35o"}, # Placeholder
+                    {"name": "Plate Pinches", "sets": 3, "repetitions": 30, "video_link": "https://www.youtube.com/watch?v=b4wSgL_m35o"},
                     {"name": "Zottman Curls", "sets": 3, "repetitions": 10, "video_link": "https://www.youtube.com/watch?v=r0wV9pY6Gts"},
                 ],
             },
@@ -142,12 +142,12 @@ class Command(BaseCommand):
                 "Gastrocnemius": [
                     {"name": "Standing Calf Raises", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=rMhnn746K1I"},
                     {"name": "Calf Press (Leg Press Machine)", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=ymR7XFp_7mQ"},
-                    {"name": "Jump Rope", "sets": 3, "repetitions": 60, "video_link": "https://www.youtube.com/watch?v=X0YjJt1v40g"}, # Placeholder
+                    {"name": "Jump Rope", "sets": 3, "repetitions": 60, "video_link": "https://www.youtube.com/watch?v=X0YjJt1v40g"},
                 ],
                 "Soleus": [
                     {"name": "Seated Calf Raises", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=GAQvQ-y0q_4"},
                     {"name": "Donkey Calf Raises", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=H6Uo3x6yIrg"},
-                    {"name": "Calf Raises with Bent Knee", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=X0YjJt1v40g"}, # Placeholder
+                    {"name": "Calf Raises with Bent Knee", "sets": 3, "repetitions": 15, "video_link": "https://www.youtube.com/watch?v=X0YjJt1v40g"},
                 ],
             },
             "Core": {

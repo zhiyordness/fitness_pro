@@ -8,7 +8,7 @@ from training.forms import TrainingDayCreateForm, ExerciseCreateForm
 from training.models import TrainingDay, Exercise, MuscleGroup
 
 
-# Create your views here.
+
 class TrainingDayListView(ListView):
     model = TrainingDay
     template_name = 'training/training_day/training-days-list.html'
