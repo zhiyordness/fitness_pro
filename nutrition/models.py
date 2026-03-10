@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -102,6 +103,11 @@ class MealFoodItem(models.Model):
 
 
 class NutritionDay(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='nutrition_days',
+    )
     name = models.CharField(
         max_length=50,
         choices=WeekDaysChoices.choices,

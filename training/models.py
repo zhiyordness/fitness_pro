@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -46,6 +47,12 @@ class Muscle(BaseModel):
 
 
 class TrainingDay(models.Model):
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='training_days',
+    )
 
     day = models.CharField(
         max_length=15,

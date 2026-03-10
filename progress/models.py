@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
@@ -6,6 +7,11 @@ from choices import WeekDaysChoices
 
 
 class ProgresTracking(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='progress_tracking',
+    )
     day = models.CharField(
         max_length=50,
         choices=WeekDaysChoices.choices,
