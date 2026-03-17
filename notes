@@ -1,1 +1,9 @@
-when a profile is created - the first tracking
+
+add validator to the photo upload
+
+the edit profile form should be able to change the user's names
+
+# signals.py
+add emailing to the user profile when the user is created
+
+

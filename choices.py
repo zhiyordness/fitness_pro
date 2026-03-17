@@ -14,8 +14,8 @@ class WeekDaysChoices(models.TextChoices):
 class MealTypeChoices(models.TextChoices):
     BREAKFAST = "Breakfast", "Breakfast"
     SNACK = "Snack", "Snack"
-    PRE_WORKOUT = "Pre workout", "Pre workout"
-    POST_WORKOUT = "Post workout", "Post workout"
+    PRE_WORKOUT = "Pre Workout", "Pre Workout"
+    POST_WORKOUT = "Post Workout", "Post Workout"
     DINNER = "Dinner", "Dinner"
 
 

@@ -1,14 +1,14 @@
-from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 from choices import WeekDaysChoices
 
-
+UserModel = get_user_model()
 
 class ProgresTracking(models.Model):
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        UserModel,
         on_delete=models.CASCADE,
         related_name='progress_tracking',
     )
@@ -76,7 +76,7 @@ class ProgresTracking(models.Model):
     )
 
     def __str__(self):
-        return f"{self.date}"
+        return f"Progress for {self.owner.username} on {self.date.strftime('%Y-%m-%d')}"
 
     class Meta:
         ordering = ['-date']

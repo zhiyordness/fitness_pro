@@ -1,11 +1,14 @@
 from decimal import Decimal
+
+from django import forms
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import When, Case, IntegerField
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView, ListView
 from choices import WeekDaysChoices
-from nutrition.forms import MealForm, MealFoodItemForm
+from nutrition.forms import MealForm, MealFoodItemForm, DayCreateForm
 from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase
 
 
@@ -14,17 +17,17 @@ class NutritionCalculator:
     @staticmethod
     def calculate_meal_totals(meal: Meal) -> dict:
         totals = {
-            'calories': 0,
-            'protein': 0,
-            'carbohydrates': 0,
-            'fat': 0
+            'calories': Decimal('0'),
+            'protein': Decimal('0'),
+            'carbohydrates': Decimal('0'),
+            'fat': Decimal('0'),
         }
 
-        for item in meal.mealfooditem_set.all():
+        for item in meal.mealfooditem_set.select_related('food').all():
 
             item_quantity = 0
             if item.measure == 'Gr.':
-                item_quantity = item.quantity / 100
+                item_quantity = item.quantity / Decimal('100')
             else:
                 item_quantity = item.quantity
 
@@ -50,7 +53,7 @@ class NutritionCalculator:
 
         return totals
 
-class NutritionHomeView(ListView):
+class NutritionHomeView(LoginRequiredMixin, ListView):
     model = NutritionDay
     template_name = 'nutrition/nutrition-overview.html'
     context_object_name = 'days'
@@ -66,11 +69,12 @@ class NutritionHomeView(ListView):
             When(name=WeekDaysChoices.SATURDAY, then=6),
             When(name=WeekDaysChoices.SUNDAY, then=7),
         ]
-        return NutritionDay.objects.annotate(
+        return NutritionDay.objects.filter(
+            owner=self.request.user
+        ).annotate(
             days_order=Case(*order_days, output_field=IntegerField())
         ).order_by('days_order').prefetch_related(
             'meals',
-            'meals__mealfooditem_set',
             'meals__mealfooditem_set__food'
         ).all()
 
@@ -80,7 +84,7 @@ class NutritionHomeView(ListView):
         day_totals = {}
 
         for day in days:
-            ordered_meals = day.meals.all()
+            ordered_meals = day.meals.all().order_by('order')
             for meal in ordered_meals:
                 meal.totals = NutritionCalculator.calculate_meal_totals(meal)
             day_totals[day.pk] = NutritionCalculator.calculate_day_totals(day)
@@ -91,7 +95,7 @@ class NutritionHomeView(ListView):
         return context
 
 
-class MealDetailsView(DetailView):
+class MealDetailsView(LoginRequiredMixin, DetailView):
     model = Meal
     form_class = MealForm
     template_name = 'nutrition/meal/meal-details.html'
@@ -102,13 +106,15 @@ class MealDetailsView(DetailView):
         return reverse_lazy('nutrition:nutrition-home')
 
 
-class MealCreateView(CreateView):
+class MealCreateView(LoginRequiredMixin, CreateView):
     model = Meal
     form_class = MealForm
     template_name = 'nutrition/meal/meal-create.html'
 
     def form_valid(self, form):
         day = get_object_or_404(NutritionDay, pk=self.kwargs['day_pk'])
+        meal_name = form.cleaned_data['name']
+        form.instance.order = Meal.get_order_for_name(meal_name)
         form.instance.day = day
         messages.success(self.request, 'The Meal has been created successfully!')
         return super().form_valid(form)
@@ -117,12 +123,15 @@ class MealCreateView(CreateView):
         return reverse_lazy('nutrition:day-details', kwargs={'pk': self.object.day.pk})
 
 
-class MealEditView(UpdateView):
+class MealEditView(LoginRequiredMixin, UpdateView):
     model = Meal
     form_class = MealForm
     template_name = 'nutrition/meal/meal-edit.html'
 
     def form_valid(self, form):
+        meal_name = form.cleaned_data['name']
+        form.instance.order = Meal.get_order_for_name(meal_name)
+
         messages.success(self.request, 'The meal has been updated successfully!')
         return super().form_valid(form)
 
@@ -130,7 +139,7 @@ class MealEditView(UpdateView):
         return reverse_lazy('nutrition:day-details',kwargs={'pk': self.object.day.pk})
 
 
-class MealDeleteView(DeleteView):
+class MealDeleteView(LoginRequiredMixin, DeleteView):
     model = Meal
     template_name = 'nutrition/meal/meal-delete.html'
 
@@ -142,7 +151,7 @@ class MealDeleteView(DeleteView):
         return reverse_lazy('nutrition:day-details',kwargs={'pk': self.object.day.pk})
 
 
-class ItemAddView(CreateView):
+class ItemAddView(LoginRequiredMixin, CreateView):
     model = MealFoodItem
     form_class = MealFoodItemForm
     template_name = 'nutrition/item/item-add.html'
@@ -165,13 +174,10 @@ class ItemAddView(CreateView):
         return context
 
 
-class ItemDeleteView(DeleteView):
+class ItemDeleteView(LoginRequiredMixin, DeleteView):
     model = MealFoodItem
     template_name = 'nutrition/item/item-delete.html'
     context_object_name = 'item'
-
-    def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse_lazy(
@@ -180,46 +186,55 @@ class ItemDeleteView(DeleteView):
         )
 
 
-class DayDetailsView(DetailView):
+class DayDetailsView(LoginRequiredMixin, DetailView):
     model = NutritionDay
     template_name = 'nutrition/day/day-details.html'
     context_object_name = 'day'
-    http_method_names = ['get']
+
+    def get_queryset(self):
+        return NutritionDay.objects.filter(
+            owner=self.request.user
+        ).prefetch_related(
+            'meals__mealfooditem_set__food',
+        )
 
 
     def get_context_data(self,**kwargs):
-
         context = super().get_context_data(**kwargs)
-        day = get_object_or_404(NutritionDay, pk=self.kwargs['pk'])
+        day = self.object
 
-        if day:
-            ordered_meals = list(day.meals.all())
+        ordered_meals = day.meals.all().order_by('order')
 
-            for meal in ordered_meals:
-                meal.totals = NutritionCalculator.calculate_meal_totals(meal)
+        for meal in ordered_meals:
+            meal.totals = NutritionCalculator.calculate_meal_totals(meal)
 
-            day.totals = NutritionCalculator.calculate_day_totals(day)
-            day.ordered_meals = ordered_meals
+        day.totals = NutritionCalculator.calculate_day_totals(day)
+        day.ordered_meals = ordered_meals
 
         context['day'] = day
 
         return context
 
 
-class DayCreateView(CreateView):
+class DayCreateView(LoginRequiredMixin, CreateView):
     model = NutritionDay
-    fields = ['name']
+    form_class = DayCreateForm
     template_name = 'nutrition/day/day-create.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         messages.success(self.request, 'The day has been created successfully!')
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details', kwargs={'pk': self.object.pk})
 
-
-class DayDeleteView(DeleteView):
+class DayDeleteView(LoginRequiredMixin, DeleteView):
     model = NutritionDay
     template_name = 'nutrition/day/day-delete.html'
     context_object_name = 'day'
@@ -232,28 +247,31 @@ class DayDeleteView(DeleteView):
         return reverse_lazy('nutrition:nutrition-home')
 
 
-class DayEditView(UpdateView):
+class DayEditView(LoginRequiredMixin, UpdateView):
     model = NutritionDay
-    fields = '__all__'
+    fields = ['name']
     template_name = 'nutrition/day/day-edit.html'
 
     def form_valid(self, form):
         messages.success(self.request, 'The day has been updated successfully!')
         return super().form_valid(form)
 
+    def get_queryset(self):
+        return NutritionDay.objects.filter(owner=self.request.user)
+
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details', kwargs={'pk': self.object.pk})
 
 
 
-class FoodDatabaseListView(ListView):
+class FoodDatabaseListView(LoginRequiredMixin, ListView):
     model = FoodDatabase
     template_name = 'nutrition/food-database/food-database-list.html'
     context_object_name = 'foods'
     paginate_by = 10
 
 
-class FoodDatabaseCreateView(CreateView):
+class FoodDatabaseCreateView(LoginRequiredMixin, CreateView):
     model = FoodDatabase
     fields = '__all__'
     template_name = 'nutrition/food-database/food-database-create.html'
@@ -266,7 +284,7 @@ class FoodDatabaseCreateView(CreateView):
         return reverse_lazy('nutrition:food-database-list')
 
 
-class FoodDatabaseDeleteView(DeleteView):
+class FoodDatabaseDeleteView(LoginRequiredMixin, DeleteView):
     model = FoodDatabase
     template_name = 'nutrition/food-database/food-database-delete.html'
     context_object_name = 'food'
@@ -279,7 +297,7 @@ class FoodDatabaseDeleteView(DeleteView):
         return reverse_lazy('nutrition:food-database-list')
 
 
-class FoodDatabaseEditView(UpdateView):
+class FoodDatabaseEditView(LoginRequiredMixin, UpdateView):
     model = FoodDatabase
     fields = '__all__'
     template_name = 'nutrition/food-database/food-database-edit.html'

@@ -1,0 +1,20 @@
+{% extends 'common/base.html' %}
+{% block content %}
+<h1 class="text-center">Delete Profile</h1>
+<div class="row mt-4">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-danger">Confirm Deletion</h5>
+                <p>Are you sure you want to delete the profile for <strong>{{ request.user.email }}</strong>? This action cannot be undone.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-danger mt-3">Confirm Delete</button>
+                    <a href="{% url 'accounts:profile-details' pk=object.pk %}" class="btn btn-secondary mt-3">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

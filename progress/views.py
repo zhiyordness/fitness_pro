@@ -1,29 +1,34 @@
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
 from progress.forms import RecordCreateForm
 from progress.models import ProgresTracking
 
+UserModel = get_user_model()
 
-
-class ProgressOverviewView(ListView):
+class ProgressOverviewView(LoginRequiredMixin, ListView):
     model = ProgresTracking
     template_name = 'progress/progress-overview.html'
     context_object_name = 'last_record'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['last_record'] = ProgresTracking.objects.all().order_by('-date').first()
+        context['last_record'] = ProgresTracking.objects.filter(
+            owner=self.request.user
+        ).order_by('-date').first()
         return context
 
 
-class RecordCreateView(CreateView):
+class RecordCreateView(LoginRequiredMixin, CreateView):
     model = ProgresTracking
     form_class = RecordCreateForm
     template_name = 'progress/record/record-create.html'
     success_url = reverse_lazy('progress:overview')
 
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         messages.success(self.request, 'Record has been created successfully!')
         return super().form_valid(form)
 
@@ -54,8 +59,11 @@ class RecordListView(ListView):
     model = ProgresTracking
     template_name = 'progress/record/records-list.html'
     context_object_name = 'record'
-    paginate_by = 1
+    paginate_by = 8
     ordering = ['-day']
+
+    def get_queryset(self):
+        return ProgresTracking.objects.filter(owner=self.request.user).order_by('-date')
 
 
 class RecordDeleteView(DeleteView):

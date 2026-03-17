@@ -1,10 +1,11 @@
-from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 
 from choices import MealTypeChoices, WeekDaysChoices, MeasurementsChoices
 from common.models import BaseModel
 
+UserModel = get_user_model()
 
 class FoodDatabase(BaseModel):
 
@@ -46,6 +47,9 @@ class FoodDatabase(BaseModel):
 
     class Meta:
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
 
 
 class Meal(models.Model):
@@ -78,6 +82,30 @@ class Meal(models.Model):
     class Meta:
         ordering = ['order']
 
+    def save(self, *args, **kwargs):
+
+        order_mapping = {
+            'Breakfast': 1,
+            'Snack': 2,
+            'Pre Workout': 3,
+            'Post Workout': 4,
+            'Dinner': 5,
+        }
+        self.order = order_mapping.get(self.name, 1)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_order_for_name(cls, name):
+
+        order_mapping = {
+            'Breakfast': 1,
+            'Snack': 2,
+            'Pre Workout': 3,
+            'Post Workout': 4,
+            'Dinner': 5,
+        }
+
+        return order_mapping.get(name, 1)
 
 
 class MealFoodItem(models.Model):
@@ -95,7 +123,10 @@ class MealFoodItem(models.Model):
     )
     quantity = models.DecimalField(
         max_digits=6,
-        decimal_places=2
+        decimal_places=2,
+        validators=[
+            MinValueValidator(1)
+        ]
     )
     def __str__(self):
         return f"{self.food.name} - {self.quantity} {self.measure}"
@@ -104,17 +135,20 @@ class MealFoodItem(models.Model):
 
 class NutritionDay(models.Model):
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        UserModel,
         on_delete=models.CASCADE,
         related_name='nutrition_days',
     )
     name = models.CharField(
         max_length=50,
         choices=WeekDaysChoices.choices,
-        unique=True,
     )
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        unique_together = ('owner', 'name')
+
 
 

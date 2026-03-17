@@ -213,13 +213,13 @@ python manage.py migrate
 Training data:
 
 ```bash
-python manage.py populate_training
+python manage.py populate_training_data
 ```
 
 Food database:
 
 ```bash
-python manage.py populate_foods
+python manage.py populate_food_database
 ```
 
 ---

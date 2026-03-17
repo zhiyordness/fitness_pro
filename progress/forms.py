@@ -9,7 +9,7 @@ from progress.models import ProgresTracking
 class RecordCreateForm(ModelForm):
     class Meta:
         model = ProgresTracking
-        fields = '__all__'
+        exclude = ['owner', 'date']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

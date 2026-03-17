@@ -7,6 +7,7 @@
         <h1 class="display-4">Welcome to Fitness Pro</h1>
         <p class="lead">Track your training days, nutrition and progress</p>
         <span class="badge bg-light text-dark mb-3">{{ today_date|date:"D, d-m-Y H:i" }}</span>
+    {% if request.user.is_authenticated %}
         {% if not training_days %}
         <hr class="my-4 bg-white">
         <p>Get started by creating your first training day</p>
@@ -14,8 +15,10 @@
             Create Training Day
         </a>
         {% endif %}
+    {% endif %}
     </div>
 </div>
+{% if request.user.is_authenticated %}
 <div class="container my-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -131,4 +134,7 @@
         </div>
     </div>
 </div>
+{% else %}
+    Log in form here
+{% endif %}
 {% endblock %}

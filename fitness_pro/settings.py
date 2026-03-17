@@ -35,7 +35,7 @@ PROJECT_APPS = [
     'training',
     'nutrition',
     'progress',
-    'accounts'
+    'accounts.apps.AccountsConfig',
 ]
 
 INSTALLED_APPS = [
@@ -139,8 +139,18 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
-CSRF_TRUSTED_ORIGINS = ['https://*.ngrok.io']
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok.io',
+    'https://*.ngrok-free.app',
+    'https://*.ngrok-free.dev',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.FitnessProUser'
+
+
+LOGIN_REDIRECT_URL = 'accounts:register'
+LOGOUT_REDIRECT_URL = 'accounts:login'
+LOGIN_URL = 'accounts:login'

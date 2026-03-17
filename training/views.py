@@ -1,5 +1,6 @@
 import json
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import IntegerField, When, Case
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, DetailView, CreateView, ListView, UpdateView
@@ -9,7 +10,7 @@ from training.models import TrainingDay, Exercise, MuscleGroup
 
 
 
-class TrainingDayListView(ListView):
+class TrainingDayListView(LoginRequiredMixin, ListView):
     model = TrainingDay
     template_name = 'training/training_day/training-days-list.html'
     context_object_name = 'training_splits'
@@ -24,16 +25,18 @@ class TrainingDayListView(ListView):
             When(day=WeekDaysChoices.SATURDAY, then=6),
             When(day=WeekDaysChoices.SUNDAY, then=7),
         ]
-        return TrainingDay.objects.annotate(
+        return TrainingDay.objects.filter(
+            owner=self.request.user
+        ).annotate(
             days_order=Case(*order_days, output_field=IntegerField())
         ).order_by('days_order').prefetch_related(
             'muscle_groups',
-            'exercises'
-        ).all()
+            'exercises__muscles__group'
+        ).select_related('owner')
 
 
 
-class TrainingDayDetailsView(DetailView):
+class TrainingDayDetailsView(LoginRequiredMixin, DetailView):
     model = TrainingDay
     form_class = TrainingDayCreateForm
     template_name = 'training/training_day/training-day-details.html'
@@ -42,6 +45,14 @@ class TrainingDayDetailsView(DetailView):
     def get_success_url(self):
         return reverse_lazy('trainings:details', kwargs={'pk': self.object.pk})
 
+    def get_queryset(self):
+        return TrainingDay.objects.filter(
+            owner=self.request.user
+        ).prefetch_related(
+            'muscle_groups',
+            'exercises__muscles__group'
+        ).select_related('owner')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         training_day = self.object
@@ -49,10 +60,19 @@ class TrainingDayDetailsView(DetailView):
         context['muscle_groups'] = training_day.muscle_groups.all()
         context['exercises'] = training_day.exercises.all()
 
+        exercises_by_muscle = {}
+        for exercise in training_day.exercises.all():
+            for muscle in exercise.muscles.all():
+                if muscle.name not in exercises_by_muscle:
+                    exercises_by_muscle[muscle.name] = []
+                exercises_by_muscle[muscle.name].append(exercise)
+
+        context['exercises_by_muscle'] = exercises_by_muscle
+
         return context
 
 
-class TrainingDayCreateView(CreateView):
+class TrainingDayCreateView(LoginRequiredMixin, CreateView):
     model = TrainingDay
     form_class = TrainingDayCreateForm
     template_name = 'training/training_day/training-day-create.html'
@@ -60,6 +80,7 @@ class TrainingDayCreateView(CreateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
+        self.object.owner = self.request.user
         self.object.save()
 
         muscle_group_ids = self.request.POST.getlist('muscle_groups')
@@ -194,21 +215,21 @@ class TrainingDayEditView(UpdateView):
 
 
 
-class TrainingDayDeleteView(DeleteView):
+class TrainingDayDeleteView(LoginRequiredMixin, DeleteView):
     model = TrainingDay
     success_url = reverse_lazy('trainings:list')
     template_name = 'training/training_day/training-day-delete.html'
 
-    def delete(self, form, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         messages.success(self.request, 'Split has been deleted successfully!')
-        return super().delete(form, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
 
-class ExerciseListView(ListView):
+class ExerciseListView(LoginRequiredMixin, ListView):
     model = Exercise
     template_name = 'training/exercise/exercises-list.html'
     context_object_name = 'exercises'
-    paginate_by = 9
+    paginate_by = 10
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -257,12 +278,7 @@ class ExerciseDeleteView(DeleteView):
         return super().delete(form, *args, **kwargs)
 
 
-class ExerciseDetailsView(DetailView):
+class ExerciseDetailsView(LoginRequiredMixin, DetailView):
     model = Exercise
-    form_class = ExerciseCreateForm
     template_name = 'training/exercise/exercise_details.html'
     context_object_name = 'exercise'
-
-    def get_success_url(self):
-        return reverse_lazy('trainings:exercise-details', kwargs={'pk': self.object.pk})
-
