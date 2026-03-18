@@ -1,9 +1,13 @@
+import secrets
+from datetime import timedelta
+from django.utils import timezone
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 
 from accounts.managers import FitnessProUserManager
 from choices import GenderChoices, FitnessGoalChoices, ActivityLevelChoices, ExperienceLevelChoices
+from common.validators import ImageValidator
 
 
 # Create your models here.
@@ -14,33 +18,26 @@ class FitnessProUser(AbstractBaseUser, PermissionsMixin):
         blank=False,
         unique=True
     )
-    first_name = models.CharField(
-        max_length=50,
-        null=False,
-        blank=False
-    )
-    last_name = models.CharField(
-        max_length=50,
-        null=False,
-        blank=False
-    )
     is_active = models.BooleanField(
-        default=True,
+        default=False,
     )
     is_staff = models.BooleanField(
         default=False,
     )
+    registration_date = models.DateTimeField(
+        auto_now_add=True,
+    )
+    is_email_verified = models.BooleanField(
+        default=False,
+    )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = []
 
     objects = FitnessProUserManager()
 
     def __str__(self):
-        return self.get_full_name()
-
-    def get_full_name(self):
-        return f"{self.first_name} {self.last_name}"
+        return self.email
 
 
 class Profile(models.Model):
@@ -49,6 +46,16 @@ class Profile(models.Model):
         on_delete=models.CASCADE,
         primary_key=True,
         related_name='profile'
+    )
+    first_name = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+    last_name = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
     )
     gender = models.CharField(
         max_length=20,
@@ -95,9 +102,58 @@ class Profile(models.Model):
         upload_to='profile_pictures/',
         null=True,
         blank=True,
+        max_length=500,
+        validators=[
+            ImageValidator(),
+        ],
+        help_text='Upload a profile picture (max size: 5MB, min: 200x200px, formats: JPEG, PNG).'
     )
 
+    def __str__(self):
+        return self.get_full_name()
+
+    def get_full_name(self):
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.user.email
 
 
 
+class EmailVerificationToken(models.Model):
+    user = models.OneToOneField(
+        'FitnessProUser',
+        on_delete=models.CASCADE,
+        related_name='email_verification_token'
+    )
+    token = models.CharField(
+        max_length=100,
+        unique=True,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['token']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = secrets.token_urlsafe(48)
+
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(hours=24)
+
+        super().save(*args, **kwargs)
+
+    def is_valid(self):
+        return timezone.now() <= self.expires_at
+
+    def __str__(self):
+        return f"Verification token for {self.user.email}"

@@ -1,24 +1,32 @@
+from datetime import date
+
 from django import forms
 from django.contrib.auth import get_user_model, authenticate
 from unfold.forms import UserChangeForm, UserCreationForm
 
 from accounts.models import Profile
+from common.validators import ImageValidator
 
 UserModel = get_user_model()
 
 
 class FitnessProUserCreationForm(UserCreationForm):
+
     class Meta:
         model = UserModel
-        fields = ["email", "first_name", "last_name"]
+        fields = ["email",]
 
-    def save(self, commit = True):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'usable_password' in self.fields:
+            del self.fields['usable_password']
+
+    def save(self, commit=True):
         user = super().save(commit=commit)
 
         if commit:
             Profile.objects.get_or_create(user=user)
         return user
-
 
 class FitnessProUserChangeForm(UserChangeForm):
     class Meta:
@@ -46,6 +54,18 @@ class ProfileForm(forms.ModelForm):
             'bio': 'Bio',
             'profile_picture': 'Profile Picture',
         }
+        widgets = {
+            'date_of_birth': forms.SelectDateWidget(
+                years=range(1950, date.today().year + 1),
+            )
+        }
+
+    def clean_image(self):
+        profile_picture = self.cleaned_data.get('profile_picture')
+        if profile_picture:
+            validator = ImageValidator()
+            validator(profile_picture)
+        return profile_picture
 
 
 class UserDeleteForm(forms.Form):

@@ -1,3 +1,5 @@
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+
 from nutrition.views import NutritionCalculator
 from datetime import date, datetime
 from django.http import HttpRequest, HttpResponse
@@ -10,11 +12,12 @@ from training.models import TrainingDay
 
 
 
-class HomePageView(View):
+class HomePageView(LoginRequiredMixin, View):
     template_name = 'home/home-page.html'
 
-    def get_weight_change(self):
-        weight_records = ProgresTracking.objects.all()
+    def get_weight_change(self, user):
+        weight_records = ProgresTracking.objects.filter(owner=user)
+
         if weight_records.count() >= 2:
             last_weight = weight_records.first().weight
             previous_weight = weight_records.last().weight
@@ -24,7 +27,7 @@ class HomePageView(View):
 
     def get(self, request, *args, **kwargs):
         today_name = date.today().strftime('%A')
-        training_days = TrainingDay.objects.all()
+        training_days = TrainingDay.objects.filter(owner=request.user)
         training_day = TrainingDay.objects.filter(day__iexact=today_name).first()
 
         exercises = None
@@ -32,7 +35,13 @@ class HomePageView(View):
             exercises = training_day.exercises.all().select_related('muscles')
 
         now_time = datetime.now().time()
-        next_meal = Meal.objects.filter(time__gte=now_time, day__name__icontains=today_name).first() or None
+
+        next_meal = Meal.objects.filter(
+            time__gte=now_time,
+            day__name__icontains=today_name,
+            day__owner=request.user,
+        ).first() or None
+
         if next_meal:
             meal_items = next_meal.mealfooditem_set.select_related('food').all() if next_meal else []
             total_calories = NutritionCalculator.calculate_meal_totals(next_meal)['calories']
@@ -41,8 +50,8 @@ class HomePageView(View):
             total_calories = 0
 
         today_date = timezone.now()
-        weight_change = self.get_weight_change()
-
+        weight_change = self.get_weight_change(request.user)
+        current_weight_record = ProgresTracking.objects.filter(owner=request.user).first()
 
         context = {
             'training_days': training_days,
@@ -52,7 +61,7 @@ class HomePageView(View):
             'meal_items': meal_items,
             'today_date': today_date,
             'weight_change': weight_change,
-            'current_weight_record': ProgresTracking.objects.first(),
+            'current_weight_record': current_weight_record,
             'total_calories': total_calories,
         }
 

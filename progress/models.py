@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 from choices import WeekDaysChoices
+from common.validators import ImageValidator
 
 UserModel = get_user_model()
 
@@ -73,6 +74,10 @@ class ProgresTracking(models.Model):
         max_length=500,
         null=True,
         blank=True,
+        validators=[
+            ImageValidator(),
+        ],
+        help_text='Upload a progress picture (max size: 5MB, min: 200x200px, formats: JPEG, PNG).'
     )
 
     def __str__(self):

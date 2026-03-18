@@ -31,6 +31,7 @@ class FitnessProUserManager(BaseUserManager):
     def create_user(self, email=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
+        extra_fields.setdefault("is_email_verified", False)
         return self._create_user(email, **extra_fields)
 
     create_user.alters_data = True
@@ -38,6 +39,7 @@ class FitnessProUserManager(BaseUserManager):
     async def acreate_user(self, email=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
+        extra_fields.setdefault("is_email_verified", False)
         return await self._acreate_user(email, **extra_fields)
 
     acreate_user.alters_data = True
@@ -45,6 +47,8 @@ class FitnessProUserManager(BaseUserManager):
     def create_superuser(self, email=None, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_email_verified", True)
+        extra_fields.setdefault("is_active", True)
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
@@ -60,6 +64,8 @@ class FitnessProUserManager(BaseUserManager):
     ):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_email_verified", True)
+        extra_fields.setdefault("is_active", True)
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
@@ -96,3 +102,4 @@ class FitnessProUserManager(BaseUserManager):
                 obj=obj,
             )
         return self.none()
+

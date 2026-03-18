@@ -2,6 +2,7 @@
 from django import forms
 from django.forms import ModelForm
 
+from common.validators import ImageValidator
 from nutrition.models import Meal
 from progress.models import ProgresTracking
 
@@ -19,6 +20,12 @@ class RecordCreateForm(ModelForm):
             if field_name in ['weight', 'height']:
                 field.widget.attrs['type'] = 'number'
 
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            validator = ImageValidator()
+            validator(image)
+        return image
 
 
 

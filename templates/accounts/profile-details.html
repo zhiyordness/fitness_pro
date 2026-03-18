@@ -1,20 +1,13 @@
 {% extends 'common/base.html' %}
 {% block content %}
-<h1 class="text-center">Profile Details</h1>
+<h1 class="text-center">Profile Information</h1>
 <div class="row mt-4">
     <div class="col-md-8 offset-md-2">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">User Information</h5>
-                <p class="card-text"><strong>Email:</strong> {{ object.user.email }}</p>
-                <p class="card-text"><strong>First Name:</strong> {{ object.user.first_name }}</p>
-                <p class="card-text"><strong>Last Name:</strong> {{ object.user.last_name }}</p>
-            </div>
-        </div>
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Profile Information</h5>
+                <h4>{{ profile.first_name }} {{ profile.last_name }}</h4>
+                <p><strong>Email:</strong>{{ profile.user.email}}</p>
                 {% if object.profile_picture %}
                 <div class="text-center mb-3">
                     <img src="{{ object.profile_picture.url }}" alt="Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
