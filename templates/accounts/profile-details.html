@@ -24,6 +24,7 @@
 
                 <div class="mt-3">
                     <a href="{% url 'accounts:profile-edit' request.user.profile.pk %}" class="btn btn-primary">Edit Profile</a>
+                    <a href="{% url 'accounts:password_change' %}" class="btn btn-primary">Password Change</a>
                     <a href="{% url 'accounts:profile-delete' request.user.profile.pk %}" class="btn btn-danger">Delete Profile</a>
                 </div>
             </div>
