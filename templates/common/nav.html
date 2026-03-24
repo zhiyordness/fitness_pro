@@ -1,44 +1,146 @@
-<nav class="navbar navbar-expand-lg bg-dark navbar-dark">
+{#<nav class="navbar navbar-expand-lg bg-dark navbar-dark">#}
+{##}
+{#    <div class="container">#}
+{#        <a class="navbar-brand" href="{% url 'common:home' %}">Fitness Pro</a>#}
+{#    </div>#}
+{##}
+{#    <div class="nav-links">#}
+{#        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 flex-row">#}
+{#            {% if request.user.is_authenticated %}#}
+{#            <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:profile-details' request.user.profile.pk%}">Profile</a>#}
+{#            </li>#}
+{#            <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:list' %}">Training Days</a>#}
+{#            </li>#}
+{#            <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:exercise-list' %}">Exercises Library</a>#}
+{#            </li>#}
+{#            <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:nutrition-home' %}">Nutrition</a>#}
+{#            </li>#}
+{#            <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:food-database-list' %}">Food library</a>#}
+{#            </li>#}
+{#            <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'progress:overview' %}">Progress tracker</a>#}
+{#            </li>#}
+{#            <li class="nav-item">#}
+{#                <form method="post" action="{% url 'accounts:logout' %}">#}
+{#                    {% csrf_token %}#}
+{#                    <button type="submit" class="btn btn-outline-light text-nowrap me-1">Logout</button>#}
+{#                </form>#}
+{#            </li>#}
+{#            {% else %}#}
+{#                        <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:login' %}">Login</a>#}
+{#            </li>#}
+{#            <li class="nav-item">#}
+{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:register' %}">Register</a>#}
+{#            </li>#}
+{#            {% endif %}#}
+{#        </ul>#}
+{#    </div>#}
+{#</nav>#}
 
+<!-- templates/common/nav.html -->
+<nav class="navbar navbar-expand-lg bg-dark navbar-dark">
     <div class="container">
         <a class="navbar-brand" href="{% url 'common:home' %}">Fitness Pro</a>
-    </div>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-    <div class="nav-links">
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 flex-row">
-            {% if request.user.is_authenticated %}
-            <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:profile-details' request.user.profile.pk%}">Profile</a>
-            </li>
-            <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:list' %}">Training Days</a>
-            </li>
-            <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:exercise-list' %}">Exercises Library</a>
-            </li>
-            <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:nutrition-home' %}">Nutrition</a>
-            </li>
-            <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:food-database-list' %}">Food library</a>
-            </li>
-            <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'progress:overview' %}">Progress tracker</a>
-            </li>
-            <li class="nav-item">
-                <form method="post" action="{% url 'accounts:logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-light text-nowrap me-1">Logout</button>
-                </form>
-            </li>
-            {% else %}
-                        <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:login' %}">Login</a>
-            </li>
-            <li class="nav-item">
-                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:register' %}">Register</a>
-            </li>
-            {% endif %}
-        </ul>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+
+                {% if not request.user.is_staff %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="librariesDropdown" role="button" data-bs-toggle="dropdown">
+                        Libraries
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'nutrition:food-database-list' %}">
+                                Food Database
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'trainings:exercise-list' %}">
+                                Exercise Library
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                {% if request.user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'trainings:list' %}">Training Days</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'nutrition:nutrition-home' %}">Nutrition</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'progress:overview' %}">Progress</a>
+                    </li>
+
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            {{ request.user.email }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'accounts:profile-details' request.user.profile.pk %}">
+                                    Profile
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'accounts:logout' %}" class="dropdown-item p-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">Logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+
+                    {% if request.user.is_staff %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                Admin
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'nutrition:food-database-list' %}">
+                                        Manage Foods
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'trainings:exercise-list' %}">
+                                        Manage Exercises
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="/admin/" target="_blank">
+                                        Django Admin
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
+
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-success text-white text-nowrap" href="{% url 'accounts:register' %}">Sign Up</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
     </div>
 </nav>

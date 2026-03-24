@@ -6,7 +6,7 @@
     <div class="jumbotron bg-dark text-white text-center p-5 rounded">
         <h1 class="display-4">Welcome to Fitness Pro</h1>
         <p class="lead">Track your training days, nutrition and progress</p>
-        <span class="badge bg-light text-dark mb-3">{{ today_date|date:"D, d-m-Y H:i" }}</span>
+        <span class="badge bg-light text-dark mb-3">{{ today_date|date:"D, d-m-Y" }}</span>
     {% if request.user.is_authenticated %}
         {% if not training_days %}
         <hr class="my-4 bg-white">

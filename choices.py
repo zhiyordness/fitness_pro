@@ -48,3 +48,4 @@ class ExperienceLevelChoices(models.TextChoices):
     BEGINNER = "Beginner", "Beginner"
     INTERMEDIATE = "Intermediate", "Intermediate"
     ADVANCED = "Advanced", "Advanced"
+

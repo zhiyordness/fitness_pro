@@ -5,6 +5,7 @@ from django.db.models import IntegerField, When, Case
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, DetailView, CreateView, ListView, UpdateView
 from choices import WeekDaysChoices
+from common.mixins import StaffRequiredMixin
 from training.forms import TrainingDayCreateForm, ExerciseCreateForm
 from training.models import TrainingDay, Exercise, MuscleGroup
 
@@ -133,7 +134,7 @@ class TrainingDayCreateView(LoginRequiredMixin, CreateView):
         return context
 
 
-class TrainingDayEditView(UpdateView):
+class TrainingDayEditView(LoginRequiredMixin, UpdateView):
     model = TrainingDay
     form_class = TrainingDayCreateForm
     template_name = 'training/training_day/training-day-edit.html'
@@ -225,7 +226,7 @@ class TrainingDayDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class ExerciseListView(LoginRequiredMixin, ListView):
+class ExerciseListView(ListView):
     model = Exercise
     template_name = 'training/exercise/exercises-list.html'
     context_object_name = 'exercises'
@@ -244,7 +245,7 @@ class ExerciseListView(LoginRequiredMixin, ListView):
         return context
 
 
-class ExerciseCreateView(CreateView):
+class ExerciseCreateView(StaffRequiredMixin, CreateView):
     model = Exercise
     form_class = ExerciseCreateForm
     template_name = 'training/training_day/training-day-add-exercise.html'
@@ -255,7 +256,7 @@ class ExerciseCreateView(CreateView):
         return super().form_valid(form)
 
 
-class ExerciseEditView(UpdateView):
+class ExerciseEditView(StaffRequiredMixin, UpdateView):
     model = Exercise
     form_class = ExerciseCreateForm
     template_name = 'training/exercise/exercise_edit.html'
@@ -268,7 +269,7 @@ class ExerciseEditView(UpdateView):
         return reverse_lazy('trainings:exercise-details', kwargs={'pk': self.object.pk})
 
 
-class ExerciseDeleteView(DeleteView):
+class ExerciseDeleteView(StaffRequiredMixin, DeleteView):
     model = Exercise
     success_url = reverse_lazy('trainings:exercise-list')
     template_name = 'training/exercise/exercise-delete.html'
@@ -278,7 +279,7 @@ class ExerciseDeleteView(DeleteView):
         return super().delete(form, *args, **kwargs)
 
 
-class ExerciseDetailsView(LoginRequiredMixin, DetailView):
+class ExerciseDetailsView(DetailView):
     model = Exercise
     template_name = 'training/exercise/exercise_details.html'
     context_object_name = 'exercise'

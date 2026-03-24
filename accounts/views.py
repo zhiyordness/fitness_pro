@@ -188,3 +188,4 @@ class ResendVerificationEmailView(View):
             return redirect('accounts:login')
 
         return render(request, 'accounts/emails/resend_verification.html')
+

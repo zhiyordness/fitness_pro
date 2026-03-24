@@ -59,3 +59,4 @@ class ImageValidator:
 
         except (AttributeError, TypeError, OSError):
             raise ValidationError(_('Invalid image file'))
+

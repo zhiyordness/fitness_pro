@@ -32,3 +32,4 @@ class ExerciseAdmin(admin.ModelAdmin):
     list_display = ['day', 'description']
     list_filter = ['day', 'muscle_groups']
     search_fields = ['day', 'description', 'muscle_groups__name']
+

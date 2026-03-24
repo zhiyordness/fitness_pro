@@ -1,6 +1,4 @@
 from decimal import Decimal
-
-from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import When, Case, IntegerField
@@ -8,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView, ListView
 from choices import WeekDaysChoices
+from common.mixins import StaffRequiredMixin
 from nutrition.forms import MealForm, MealFoodItemForm, DayCreateForm
 from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase
 
@@ -101,9 +100,6 @@ class MealDetailsView(LoginRequiredMixin, DetailView):
     template_name = 'nutrition/meal/meal-details.html'
     context_object_name = 'meal'
     http_method_names = ['get']
-
-    def get_success_url(self):
-        return reverse_lazy('nutrition:nutrition-home')
 
 
 class MealCreateView(LoginRequiredMixin, CreateView):
@@ -264,14 +260,14 @@ class DayEditView(LoginRequiredMixin, UpdateView):
 
 
 
-class FoodDatabaseListView(LoginRequiredMixin, ListView):
+class FoodDatabaseListView(ListView):
     model = FoodDatabase
     template_name = 'nutrition/food-database/food-database-list.html'
     context_object_name = 'foods'
     paginate_by = 10
 
 
-class FoodDatabaseCreateView(LoginRequiredMixin, CreateView):
+class FoodDatabaseCreateView(StaffRequiredMixin, CreateView):
     model = FoodDatabase
     fields = '__all__'
     template_name = 'nutrition/food-database/food-database-create.html'
@@ -284,7 +280,7 @@ class FoodDatabaseCreateView(LoginRequiredMixin, CreateView):
         return reverse_lazy('nutrition:food-database-list')
 
 
-class FoodDatabaseDeleteView(LoginRequiredMixin, DeleteView):
+class FoodDatabaseDeleteView(StaffRequiredMixin, DeleteView):
     model = FoodDatabase
     template_name = 'nutrition/food-database/food-database-delete.html'
     context_object_name = 'food'
@@ -297,7 +293,7 @@ class FoodDatabaseDeleteView(LoginRequiredMixin, DeleteView):
         return reverse_lazy('nutrition:food-database-list')
 
 
-class FoodDatabaseEditView(LoginRequiredMixin, UpdateView):
+class FoodDatabaseEditView(StaffRequiredMixin, UpdateView):
     model = FoodDatabase
     fields = '__all__'
     template_name = 'nutrition/food-database/food-database-edit.html'

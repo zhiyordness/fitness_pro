@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -88,26 +87,6 @@ class TrainingDay(models.Model):
             models.Index(fields=['owner', 'day']),
             models.Index(fields=['owner']),
         ]
-
-    def clean(self):
-        super().clean()
-
-        if not hasattr(self, 'exercises') or not hasattr(self, 'muscle_groups'):
-             return
-
-        muscle_ids = Muscle.objects.filter(
-            group__in=self.muscle_groups.all()
-        ).values_list('id', flat=True)
-
-        invalid_exercises = []
-        for ex in self.exercises.all():
-            if not ex.muscles.filter(id__in=muscle_ids).exists():
-                invalid_exercises.append(ex.name)
-
-        if invalid_exercises:
-            raise ValidationError(
-                f"The following exercises are not valid for the selected muscle groups: {', '.join(invalid_exercises)}"
-            )
 
     def save(self, *args, **kwargs):
         self.clean()

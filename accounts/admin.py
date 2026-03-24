@@ -37,7 +37,7 @@ class FitnessProUserAdmin(BaseUserAdmin, ModelAdmin):
                 ),
             },
         ),
-        (_("Important dates"), {"fields": ("last_login", "registration_date")}),
+        (_("Important dates"), {"fields": ("last_login",)}),
     )
     add_fieldsets = (
         (
@@ -84,3 +84,7 @@ class ProfileAdmin(admin.ModelAdmin):
     user_email.short_description = 'Email'
     user_email.admin_order_field = 'user__email'
 
+
+@admin.register(Group)
+class GroupAdmin(admin.ModelAdmin):
+    ...
