@@ -31,6 +31,7 @@ class MealFoodItemForm(ModelForm):
 
 
 class NutritionDayForm(ModelForm):
+
     class Meta:
         model = NutritionDay
         fields = '__all__'

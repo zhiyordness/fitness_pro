@@ -20,6 +20,14 @@ class RecordCreateForm(ModelForm):
             if field_name in ['weight', 'height']:
                 field.widget.attrs['type'] = 'number'
 
+        if self.instance and self.instance.pk:
+            self.fields['date_display'] = forms.DateTimeField(
+                initial=self.instance.date,
+                disabled=True,
+                label='Date',
+                help_text='The date when this record was created.',
+            )
+
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if image:

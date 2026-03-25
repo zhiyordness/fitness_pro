@@ -266,6 +266,19 @@ class FoodDatabaseListView(ListView):
     context_object_name = 'foods'
     paginate_by = 10
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('search', '')
+        context['total_foods'] = FoodDatabase.objects.count()
+        return context
+
 
 class FoodDatabaseCreateView(StaffRequiredMixin, CreateView):
     model = FoodDatabase

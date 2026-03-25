@@ -28,8 +28,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.ngrok.io', 'nonsatirical-jaden-superpopulated.ngrok-free.dev']
+DEBUG = os.getenv('DEBUG') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 
 PROJECT_APPS = [
     'common',
@@ -37,6 +37,7 @@ PROJECT_APPS = [
     'nutrition',
     'progress',
     'accounts.apps.AccountsConfig',
+    'api',
 ]
 
 INSTALLED_APPS = [
@@ -47,6 +48,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'django_ratelimit',
+    'sslserver',
 ] + PROJECT_APPS
 
 MIDDLEWARE = [
@@ -57,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'common.middleware.RateLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'fitness_pro.urls'
@@ -91,6 +96,10 @@ DATABASES = {
         "PASSWORD": os.getenv('DB_PASS'),
         "HOST": os.getenv('DB_HOST'),
         "PORT": os.getenv('DB_PORT'),
+        'OPTIONS': {
+                    'sslmode': 'disable',
+                    'gssencmode': 'disable',
+            },
     }
 }
 
@@ -139,14 +148,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok.io',
-    'https://*.ngrok-free.app',
-    'https://*.ngrok-free.dev',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-]
+CSRF_COOKIE_AGE = 31449600
+CSRF_COOKIE_HTTPONLY = False
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS').split(',')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.FitnessProUser'
@@ -159,10 +163,44 @@ LOGIN_URL = 'accounts:login'
 os.environ['SSL_CERT_FILE'] = certifi.where()
 os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = 'Fitness Pro <noreply@fitnesspro.com>'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+
+
+# SECURE_SSL_REDIRECT=os.getenv('SECURE_SSL_REDIRECT') == 'True'
+# SECURE_HSTS_SECONDS=int(os.getenv('SECURE_HSTS_SECONDS', 0))
+# SECURE_HSTS_INCLUDE_SUBDOMAINS=os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False') == 'True'
+# SECURE_HSTS_PRELOAD=os.getenv('SECURE_HSTS_PRELOAD', 'False') == 'True'
+# SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO', 'https') if SECURE_SSL_REDIRECT else None
+# SESSION_COOKIE_SECURE=os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+# CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
+# SECURE_BROWSER_XSS_FILTER=os.getenv('SECURE_BROWSER_XSS_FILTER', 'True') == 'True'
+# SECURE_CONTENT_TYPE_NOSNIFF=os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True') == 'True'
+# X_FRAME_OPTIONS=os.getenv('X_FRAME_OPTIONS', 'DENY')
+
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400
+SESSION_SAVE_EVERY_REQUEST = True
+
+
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379'),
+    }
+}
