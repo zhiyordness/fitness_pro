@@ -13,7 +13,7 @@
                     <h4 class="mb-0">Day: {{ meal.name }}</h4>
                 </div>
                 <div class="card-body">
-                    {% if meal..all %}
+                    {% if meal.meals.all %}
                         <h5>Meals planned for this day:</h5>
                         <ul class="list-group list-group-flush">
                             {% for single_meal in meal.meals.all %}
@@ -39,3 +39,4 @@
     </div>
 </div>
 {% endblock %}
+

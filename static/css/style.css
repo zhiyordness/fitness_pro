@@ -8,7 +8,7 @@ body {
 }
 
 .error-404-background {
-    background-image: url('static/images/59766cc8c51aaf431.73780060.jpg') !important;
+    background-image: url('../images/59766cc8c51aaf431.73780060.jpg') !important;
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;

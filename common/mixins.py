@@ -11,3 +11,4 @@ class StaffRequiredMixin(UserPassesTestMixin, LoginRequiredMixin):
     def handle_no_permission(self):
         messages.error(self.request, "You do not have permission to access this page.")
         return redirect('common:home')
+

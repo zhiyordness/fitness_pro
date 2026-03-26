@@ -10,9 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os
+import sys
 import certifi
 from pathlib import Path
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS').split(',') if host]
 
 PROJECT_APPS = [
     'common',
@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 ] + PROJECT_APPS
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -74,9 +75,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -88,6 +91,8 @@ WSGI_APPLICATION = 'fitness_pro.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+IS_PRODUCTION = os.getenv('PRODUCTION', 'False') == 'True'
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -97,9 +102,8 @@ DATABASES = {
         "HOST": os.getenv('DB_HOST'),
         "PORT": os.getenv('DB_PORT'),
         'OPTIONS': {
-                    'sslmode': 'disable',
-                    'gssencmode': 'disable',
-            },
+            'sslmode': 'require' if IS_PRODUCTION else 'disable',
+        },
     }
 }
 
@@ -127,66 +131,77 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
+LANGUAGES = [
+    ('en', 'English'),
+    ('bg', 'Bulgarian'),
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STORAGES={
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
-
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 CSRF_COOKIE_AGE = 31449600
-CSRF_COOKIE_HTTPONLY = False
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS').split(',')
+CSRF_COOKIE_HTTPONLY = True
+CSRF_TRUSTED_ORIGINS = [host for host in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if host]
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400
+SESSION_SAVE_EVERY_REQUEST = False
+
 AUTH_USER_MODEL = 'accounts.FitnessProUser'
-
-
-LOGIN_REDIRECT_URL = 'accounts:register'
+LOGIN_REDIRECT_URL = 'common:home'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 LOGIN_URL = 'accounts:login'
 
-os.environ['SSL_CERT_FILE'] = certifi.where()
-os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
-
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
 
-# SECURE_SSL_REDIRECT=os.getenv('SECURE_SSL_REDIRECT') == 'True'
-# SECURE_HSTS_SECONDS=int(os.getenv('SECURE_HSTS_SECONDS', 0))
-# SECURE_HSTS_INCLUDE_SUBDOMAINS=os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False') == 'True'
-# SECURE_HSTS_PRELOAD=os.getenv('SECURE_HSTS_PRELOAD', 'False') == 'True'
-# SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO', 'https') if SECURE_SSL_REDIRECT else None
-# SESSION_COOKIE_SECURE=os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
-# CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
-# SECURE_BROWSER_XSS_FILTER=os.getenv('SECURE_BROWSER_XSS_FILTER', 'True') == 'True'
-# SECURE_CONTENT_TYPE_NOSNIFF=os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True') == 'True'
-# X_FRAME_OPTIONS=os.getenv('X_FRAME_OPTIONS', 'DENY')
-
-
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 86400
-SESSION_SAVE_EVERY_REQUEST = True
+if IS_PRODUCTION:
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    SECURE_SSL_REDIRECT = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_PROXY_SSL_HEADER = None
 
 
 CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
@@ -204,3 +219,8 @@ CACHES = {
         'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379'),
     }
 }
+
+os.environ['SSL_CERT_FILE'] = certifi.where()
+os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

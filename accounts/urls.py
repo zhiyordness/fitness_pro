@@ -61,3 +61,4 @@ urlpatterns = [
     path('', include(authentication)),
     path('profile/<int:pk>/', include(profile)),
 ]
+

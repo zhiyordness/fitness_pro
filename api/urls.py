@@ -8,3 +8,4 @@ urlpatterns = [
     path('exercises/', views.ExerciseAPIView.as_view(), name='exercises'),
     path('foods/search/', views.FoodSearchAPIView.as_view(), name='food-search'),
 ]
+

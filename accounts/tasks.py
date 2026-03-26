@@ -100,3 +100,4 @@ def send_password_reset_email_task(user_email, reset_link, user_first_name=None)
     except Exception as e:
         print(f"Failed to send password reset email to {user_email}: {e}")
         raise e
+

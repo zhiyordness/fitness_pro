@@ -283,3 +283,5 @@ class ExerciseDetailsView(DetailView):
     model = Exercise
     template_name = 'training/exercise/exercise_details.html'
     context_object_name = 'exercise'
+
+

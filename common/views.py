@@ -71,3 +71,5 @@ class HomePageView(LoginRequiredMixin, View):
 
 def page_not_found_view(request: HttpRequest, exception) -> HttpResponse:
     return render(request, 'errors/404.html', status=404)
+
+

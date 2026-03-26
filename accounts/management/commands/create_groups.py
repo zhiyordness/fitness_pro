@@ -34,3 +34,4 @@ class Command(BaseCommand):
             self.stdout.write('✅ Exercise Editors group created')
 
         self.stdout.write(self.style.SUCCESS('Groups created successfully!'))
+

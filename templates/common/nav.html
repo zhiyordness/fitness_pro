@@ -1,49 +1,4 @@
-{#<nav class="navbar navbar-expand-lg bg-dark navbar-dark">#}
-{##}
-{#    <div class="container">#}
-{#        <a class="navbar-brand" href="{% url 'common:home' %}">Fitness Pro</a>#}
-{#    </div>#}
-{##}
-{#    <div class="nav-links">#}
-{#        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 flex-row">#}
-{#            {% if request.user.is_authenticated %}#}
-{#            <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:profile-details' request.user.profile.pk%}">Profile</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:list' %}">Training Days</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'trainings:exercise-list' %}">Exercises Library</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:nutrition-home' %}">Nutrition</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'nutrition:food-database-list' %}">Food library</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'progress:overview' %}">Progress tracker</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <form method="post" action="{% url 'accounts:logout' %}">#}
-{#                    {% csrf_token %}#}
-{#                    <button type="submit" class="btn btn-outline-light text-nowrap me-1">Logout</button>#}
-{#                </form>#}
-{#            </li>#}
-{#            {% else %}#}
-{#                        <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:login' %}">Login</a>#}
-{#            </li>#}
-{#            <li class="nav-item">#}
-{#                <a class="btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:register' %}">Register</a>#}
-{#            </li>#}
-{#            {% endif %}#}
-{#        </ul>#}
-{#    </div>#}
-{#</nav>#}
 
-<!-- templates/common/nav.html -->
 <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
     <div class="container">
         <a class="navbar-brand" href="{% url 'common:home' %}">Fitness Pro</a>
@@ -88,7 +43,7 @@
 
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            {{ request.user.email }}
+                            {{ request.user.email|truncatechars:20 }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
@@ -144,3 +99,4 @@
         </div>
     </div>
 </nav>
+

@@ -44,3 +44,4 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"'{food_item.name}' already exists in the FoodDatabase."))
 
         self.stdout.write(self.style.SUCCESS('FoodDatabase population complete.'))
+

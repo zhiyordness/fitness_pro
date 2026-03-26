@@ -25,3 +25,4 @@ class FoodSearchAPIView(APIView):
         foods = FoodDatabase.objects.filter(name__icontains=query)[:20]
         serializer = FoodDatabaseSerializer(foods, many=True)
         return Response(serializer.data)
+

@@ -126,3 +126,4 @@ class ProfileViewTest(TestCase):
                     kwargs={'pk': self.user.profile.pk})
         )
         self.assertEqual(response.status_code, 200)
+

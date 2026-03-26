@@ -73,3 +73,5 @@ class NutritionDayTest(TestCase):
         response = self.client.get(reverse('nutrition:day-details',
                                            kwargs={'pk': day.pk}))
         self.assertEqual(response.status_code, 302)
+
+

@@ -112,3 +112,5 @@ class UserDeleteForm(forms.Form):
         if not authenticate(email=self.user.email, password=password):
             raise forms.ValidationError("Incorrect password. Please try again.")
         return password
+
+

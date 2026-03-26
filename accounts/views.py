@@ -161,31 +161,17 @@ class ResendVerificationEmailView(View):
     def post(self, request):
         email = request.POST.get('email', '').strip()
 
-        try:
-            user = FitnessProUser.objects.get(email=email, is_email_verified=False)
+
+        user = FitnessProUser.objects.filter(email=email, is_email_verified=False).first()
+        if user:
             if hasattr(user, 'email_verification_token'):
                 token = user.email_verification_token
-                if token.is_valid():
-                    success, message = send_verification_email(request, user)
-                else:
+                if not token.is_valid():
                     token.delete()
-                    success, message = send_verification_email(request, user)
-            else:
-                success, message = send_verification_email(request, user)
 
-            if success:
-                messages.success(request, 'Verification email has been sent. Please check your inbox.')
-                return redirect('accounts:login')
-            else:
-                messages.error(request, 'Failed to send verification email. Please try again later.')
+            send_verification_email(request, user)
 
-        except FitnessProUser.DoesNotExist:
 
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Verification email resend requested for non-existent or already verified email: {email}")
+        messages.success(request, 'If an account with that email exists and is not verified, a verification email has been sent.')
 
-            messages.success(request, 'If an account with that email exists and is not verified, a verification email has been sent. Please check your inbox.')
-            return redirect('accounts:login')
-
-        return render(request, 'accounts/emails/resend_verification.html')
-
+        return redirect('accounts:login')

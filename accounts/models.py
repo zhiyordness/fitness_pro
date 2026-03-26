@@ -157,3 +157,4 @@ class EmailVerificationToken(models.Model):
 
     def __str__(self):
         return f"Verification token for {self.user.email}"
+

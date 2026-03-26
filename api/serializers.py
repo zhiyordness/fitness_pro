@@ -15,3 +15,4 @@ class ExerciseSerializer(serializers.Serializer):
     class Meta:
         model = Exercise
         fields = ['id', 'name', 'sets', 'repetitions', 'video_link', 'muscles']
+

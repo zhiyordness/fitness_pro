@@ -20,3 +20,4 @@ def send_verification_email(request, user):
     send_verification_email_task.delay(user.email, verification_link)
 
     return True, "Verification email queued for sending"
+
