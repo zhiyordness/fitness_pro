@@ -175,3 +175,4 @@ class ResendVerificationEmailView(View):
         messages.success(request, 'If an account with that email exists and is not verified, a verification email has been sent.')
 
         return redirect('accounts:login')
+

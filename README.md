@@ -13,184 +13,219 @@ Fitness Pro allows users to:
 
 ---
 
-# Project Overview
+## Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Local Development Setup](#local-development-setup)
+- [Environment Variables](#environment-variables)
+- [Database Setup](#database-setup)
+- [Running the Application](#running-the-application)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
 
-Fitness Pro is built as a modular Django application that demonstrates:
-
-- Clean architecture and app separation
-- Relational database design with normalized models
-- Many-to-One and Many-to-Many relationships
-- Form validation and customization
-- Full CRUD functionality
-- Template inheritance and reusable components
-- Query optimization using `prefetch_related` and `annotate`
-- Custom template filters
-- Management commands for database population
-
-The project follows Django best practices and Object-Oriented Programming principles.
 
 ---
 
-# Project Structure
+## Project Overview
 
-The application consists of four Django apps:
+Fitness Pro is a full-featured fitness management platform that allows users to:
+- Track workouts and exercises
+- Log nutrition and food intake
+- Monitor fitness progress over time
+- Create custom workout routines
+- Access a comprehensive exercise library
+- Manage food database
 
-### 1. `training`
-Manages:
-- Training days (splits)
-- Muscle groups
-- Muscles
-- Exercises
+The application includes both public and private sections, with role-based permissions for content editors.
+---
 
-### 2. `nutrition`
-Manages:
-- Nutrition days
-- Meals
-- Food database
-- Meal-food relationships
-- Macro calculations
+## Features
 
-### 3. `progress`
-Manages:
-- Weight tracking
-- Body measurements
-- Progress images
+### Core Functionality
+-  User registration and authentication
+-  Email verification for new accounts
+-  Profile management with fitness goals
+-  Exercise library with search and filter
+-  Food database with nutritional information
+-  Workout creation and tracking
+-  Progress monitoring with charts
+-  Full CRUD operations for owners
 
-### 4. `common`
-Contains:
-- Base templates
-- Navigation
-- Homepage dashboard
-- Custom 404 page
+### Technical Features
+-  Class-based views (90% CBV usage)
+-  RESTful API using Django REST Framework
+-  Asynchronous tasks with Celery
+-  Redis caching for performance
+-  PostgreSQL database with SSL
+-  Responsive Bootstrap design
+-  Comprehensive test suite
+-  Production-ready security features
 
 ---
 
-# Business Logic
+## Technology Stack
 
-The project separates business logic from view logic where appropriate.
-
-## NutritionCalculator Service Class
-
-The `NutritionCalculator` class is responsible for calculating:
-
-- Total macronutrients per meal
-- Total macronutrients per day
-
-This ensures:
-
-- Clean separation of concerns
-- Reusable logic
-- Thin views
-- Better maintainability
-
-### Meal Total Calculation
-
-For each `MealFoodItem`, the calculator:
-
-1. Adjusts quantity based on measurement (grams, pieces, milliliters)
-2. Multiplies the quantity by the nutritional values of the related `FoodDatabase` entry
-3. Aggregates totals for:
-   - Calories
-   - Protein
-   - Carbohydrates
-   - Fat
-
-### Day Total Calculation
-
-For each `NutritionDay`, the calculator:
-
-1. Iterates through all related meals
-2. Calculates individual meal totals
-3. Aggregates them into daily totals
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Django 5.1.3, Python 3.12 |
+| **Database** | PostgreSQL 14 (Azure Flexible Server) |
+| **Cache/Broker** | Redis 7.0 |
+| **Task Queue** | Celery 5.6 |
+| **API** | Django REST Framework 3.15 |
+| **Frontend** | Bootstrap 5, HTML5, CSS3 |
+| **Deployment** | Microsoft Azure App Service |
+| **Static Files** | WhiteNoise |
+| **Async Tasks** | Celery + Redis |
+| **Email** | SMTP (Gmail/SendGrid) |
 
 ---
 
-## Homepage Dashboard Aggregation
-
-The homepage combines data from all modules and dynamically displays:
-
-- Today’s training split
-- Assigned exercises and muscle groups
-- Next scheduled meal for the day
-- Total calories for the next meal
-- Latest progress record
-- Weight change compared to previous record
-
-This demonstrates cross-app integration and real-world dashboard logic.
-
----
-
-## Query Optimization
-
-The project uses:
-
-- `prefetch_related()` for Many-to-Many optimization
-- `annotate()` with `Case` and `When` for weekday ordering
-- Efficient queryset handling in ListViews
-- Pagination for large datasets
-
-This ensures:
-
-- Reduced database queries
-- Better performance
-- Scalable structure
+## Architecture
+┌─────────────────────────────────────┐
+│         Azure App Service           │
+│                                     │
+│    ┌───────────────────────────┐    │
+│    │      Gunicorn Server      │    │
+│    │                           │    │
+│    │   ┌───────────────────┐   │    │
+│    │   │  Django App       │   │    │
+│    │   │                   │   │    │
+│    │   │  - Accounts       │   │    │
+│    │   │  - Training       │   │    │
+│    │   │  - Nutrition      │   │    │
+│    │   │  - Progress       │   │    │
+│    │   │  - Common         │   │    │
+│    │   │  - API            │   │    │
+│    │   └───────────────────┘   │    │
+│    └───────────────────────────┘    │
+└─────────────┬───────────────────────┘
+              │
+    ┌─────────┼─────────┐
+    ▼         ▼         ▼
+┌────────┐ ┌──────┐ ┌────────┐
+│Postgres│ │Redis │ │ Blob   │
+│Database│ │Cache │ │Storage │
+└────────┘ └──────┘ └────────┘
 
 ---
 
+## Prerequisites
 
-# Technologies Used
-
-- Python 3.x
-- Django 6.0.1
-- PostgreSQL
-- Bootstrap 5
-- Pillow
-- django-unfold
-- python-dotenv
+- Python 3.12 or higher
+- PostgreSQL 14 or higher (local development)
+- Redis 7.0 (optional, for Celery)
+- Git
+- Azure CLI (for deployment)
+- Virtual environment tool (venv/poetry)
 
 ---
 
-# Setup & Installation
+## Local Development Setup
 
-## 1. Clone the Repository
-
+### 1. Clone the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/zhiyordness/fitness_pro.git
 cd fitness_pro
-```
+````
 
-## 2. Create Virtual Environment
+### 2. Create Virtual Environment
 
 ```bash
-python -m venv venv
-source venv/bin/activate   # Mac/Linux
-venv\Scripts\activate      # Windows
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
-## 3. Install Dependencies
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
+### 4. Create Environment File
+
+Create a .env file in the project root:
+
+```bash
+cp .env.example .env
+```
+
+### 5. Configure Database
+
+Create a PostgreSQL database:
+
+```sql
+CREATE DATABASE fitness_pro;
+CREATE USER fitness_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE fitness_pro TO fitness_user;
+```
+
+### 6. Run Migrations
+
+```bash
+python manage.py migrate
+```
+
+### 7. Create Superuser
+
+```bash
+python manage.py createsuperuser
+```
+
+### 8. Collect Static Files
+
+```bash
+python manage.py collectstatic
+```
+
+### 9. Run Development Server
+
+```bash
+python manage.py runserver
+```
+
+Access the application at: http://localhost:8000
+
 ---
 
 # Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root or use the .env.example template in the project:
 
 ```
-SECRET_KEY=your-secret-key
-DB_NAME=fitness_pro_db
-DB_USER=your_db_user
-DB_PASS=your_db_password
+# Django Settings
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Database
+DB_NAME=fitness_pro
+DB_USER=postgres
+DB_PASS=your_password
 DB_HOST=localhost
 DB_PORT=5432
-```
 
+# Redis (Optional, for Celery)
+REDIS_URL=redis://localhost:6379
+
+# Email Configuration (Optional)
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+DEFAULT_FROM_EMAIL=Fitness Pro <noreply@fitnesspro.com>
+
+# Production Settings
+PRODUCTION=False
+CSRF_TRUSTED_ORIGINS=http://localhost:8000
+```
 ---
 
-# PostgreSQL Setup
+## PostgreSQL Database Setup
 
 Create a PostgreSQL database:
 
@@ -198,17 +233,13 @@ Create a PostgreSQL database:
 CREATE DATABASE fitness_pro_db;
 ```
 
----
-
-# Apply Migrations
+### Apply Migrations
 
 ```bash
 python manage.py migrate
 ```
 
----
-
-# Populate Initial Data (Optional)
+### Populate Initial Data (Optional)
 
 Training data:
 
@@ -223,56 +254,113 @@ python manage.py populate_food_database
 ```
 
 ---
+## Running the Application
 
-# Run the Application
+### Development Server
 
 ```bash
 python manage.py runserver
 ```
 
-Open in browser:
+### Production with Gunicorn
+
+```bash
+gunicorn --workers 3 --bind 0.0.0.0:8000 fitness_pro.wsgi:application
+```
+
+### Celery Worker (Async Tasks)
+
+```bash
+celery -A fitness_pro worker --loglevel=info
+```
+
+### Run Tests
+
+```bash
+python manage.py test
+```
+---
+
+## Testing
+
+The project includes a comprehensive test suite covering:
+- Model tests for all apps
+- View tests for key endpoints
+- Form validation tests
+- API endpoint tests
+
+Run tests with:
+
+```bash
+python manage.py test
+``` 
+---
+
+## Project Structure
 
 ```
-http://127.0.0.1:8000/
+fitness_pro/
+├── fitness_pro/              # Project configuration
+│   ├── settings.py          # Development settings
+│   ├── azure_settings.py    # Production settings
+│   ├── urls.py              # Main URL configuration
+│   └── wsgi.py              # WSGI entry point
+├── accounts/                 # User management app
+│   ├── models.py            # User and Profile models
+│   ├── views.py             # Registration, login, profile views
+│   ├── forms.py             # User forms
+│   └── urls.py              # Authentication URLs
+├── training/                 # Workout and exercise app
+│   ├── models.py            # Exercise, Workout models
+│   ├── views.py             # Workout CRUD views
+│   └── forms.py             # Workout forms
+├── nutrition/                # Food tracking app
+│   ├── models.py            # Food, Meal models
+│   ├── views.py             # Food database views
+│   └── forms.py             # Food entry forms
+├── progress/                 # Progress tracking app
+│   ├── models.py            # Progress, Statistics models
+│   └── views.py             # Progress charts and stats
+├── common/                   # Shared utilities
+│   ├── middleware.py        # Rate limiting, custom middleware
+│   └── context_processors.py # Global template variables
+├── api/                      # REST API
+│   ├── serializers.py       # DRF serializers
+│   ├── views.py             # API views
+│   └── urls.py              # API endpoints
+├── static/                   # Static files
+│   ├── css/                 # Stylesheets
+│   ├── js/                  # JavaScript files
+│   └── images/              # Images and icons
+├── templates/                # HTML templates
+│   ├── base.html            # Base template
+│   ├── common/              # Shared templates
+│   └── accounts/            # User-related templates
+├── media/                    # User-uploaded files
+├── requirements.txt          # Python dependencies
+├── runtime.txt               # Python version for Azure
+├── .env.example              # Environment variables template
+├── manage.py                 # Django management script
+└── README.md                 # This file
 ```
+---
+ 
+## Author
+
+### Zhivomir Yordanov - @zhiyordness
+
+
+## Acknowledgments
+
+- Django Software Foundation
+- Microsoft Azure for hosting
+- Bootstrap team for the CSS framework
+- ll contributors and testers
 
 ---
 
-# Features Overview
+## Links
 
-### Training Module
-- Create training days
-- Assign muscle groups
-- Select exercises dynamically
-- Full CRUD functionality
+### Live Application: https://fitnesspro.azurewebsites.net
+### GitHub Repository: https://github.com/zhiyordness/fitness_pro
 
-### Exercise Library
-- Search functionality
-- Pagination
-- Detailed exercise view
-
-### Nutrition Module
-- Create days and meals
-- Add food items to meals
-- Automatic macro calculation
-- Daily totals overview
-
-### Progress Tracker
-- Record body measurements
-- Upload progress images
-- View detailed progress history
-- Pagination
-
----
-
-# Security
-
-- Environment variables for sensitive data
-- CSRF protection enabled (Django default middleware)
-- PostgreSQL backend for secure and reliable data management
-
----
-
-# Author
-
-Zhivomir Yordanov

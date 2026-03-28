@@ -13,5 +13,11 @@ def create_profile(sender, instance, created, **kwargs):
     This is a back-up signal.
     """
     if created:
-        Profile.objects.create(user=instance)
+        Profile.objects.get_or_create(user=instance)
 
+
+@receiver(post_save, sender=UserModel)
+def save_profile(sender, instance, **kwargs):
+
+    if hasattr(instance, 'profile'):
+        instance.profile.save()

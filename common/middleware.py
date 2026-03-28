@@ -2,7 +2,10 @@ from django.core.cache import cache
 from django.http import HttpResponseForbidden
 import hashlib
 import sys
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 class RateLimitMiddleware:
 
@@ -45,46 +48,59 @@ class RateLimitMiddleware:
         limit = rate_config['limit']
         window = rate_config['window']
 
-        key = self.get_cache_key(request)
-        attempts = cache.get(key, 0)
+        try:
+            key = self.get_cache_key(request)
+            attempts = cache.get(key, 0)
 
-        if attempts >= limit:
-            return True
+            if attempts >= limit:
+                return True
 
-        if request.method == 'POST':
-            cache.set(key, attempts + 1, timeout=window)
+            if request.method == 'POST':
+                cache.set(key, attempts + 1, timeout=window)
+
+        except Exception as e:
+            logger.error(f'Rate limit cache error: {e}')
+            return False
 
         return False
 
     def reset_rate_limit(self, request):
         if self.is_test_environment():
             return
-        path = request.path
-        if path in self.RATE_LIMITS:
-            key = self.get_cache_key(request)
-            cache.delete(key)
+
+        try:
+            path = request.path
+            if path in self.RATE_LIMITS:
+                key = self.get_cache_key(request)
+                cache.delete(key)
+        except Exception as e:
+            logger.error(f'Rate limit reset error: {e}')
 
     def __call__(self, request):
         if self.is_test_environment():
             return self.get_response(request)
 
-        if request.method == 'POST':
-            if self.is_rate_limited(request):
-                path = request.path
-                rate_config = self.RATE_LIMITS.get(path, {})
-                limit = rate_config.get('limit', 5)
-                window = rate_config.get('window', 300)
-                minutes = window // 60
+        try:
+            if request.method == 'POST':
+                if self.is_rate_limited(request):
+                    path = request.path
+                    rate_config = self.RATE_LIMITS.get(path, {})
+                    limit = rate_config.get('limit', 5)
+                    window = rate_config.get('window', 300)
+                    minutes = window // 60
 
-                return HttpResponseForbidden(
-                    f'Too many attempts. Maximum {limit} attempts per {minutes} minutes. '
-                    f'Please try again later.'
-                )
+                    return HttpResponseForbidden(
+                        f'Too many attempts. Maximum {limit} attempts per {minutes} minutes. '
+                        f'Please try again later.'
+                    )
 
-        response = self.get_response(request)
+            response = self.get_response(request)
 
-        if request.path == '/accounts/login/' and response.status_code == 302:
-            self.reset_rate_limit(request)
+            if request.path == '/accounts/login/' and response.status_code == 302:
+                self.reset_rate_limit(request)
 
-        return response
+            return response
 
+        except Exception as e:
+            logger.error(f'Rate limit middleware error: {e}')
+            return self.get_response(request)

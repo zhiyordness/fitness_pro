@@ -215,8 +215,8 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379'),
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'fitness-pro-cache',
     }
 }
 
