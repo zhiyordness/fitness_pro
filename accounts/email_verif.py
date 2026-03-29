@@ -17,7 +17,7 @@ def send_verification_email(request, user):
         reverse('accounts:verify-email', kwargs={'token': token_object.token})
     )
 
-    send_verification_email_task(user.email, verification_link)
+    send_verification_email_task.run(user.email, verification_link)
 
     return True, "Verification email queued for sending"
 
