@@ -2,14 +2,6 @@
 
 A Django-based web application for managing **training programs, nutrition planning, and progress tracking** in one structured system.
 
-Fitness Pro allows users to:
-
-- Organize training splits by muscle groups
-- Browse and manage an exercise library
-- Plan daily meals with macro calculations
-- Track body measurements and weight progress
-- Upload progress images
-- View a dashboard overview of training, nutrition, and progress
 
 ---
 
@@ -119,8 +111,8 @@ The application includes both public and private sections, with role-based permi
 - Redis 7.0 (optional, for Celery)
 - Git
 - Azure CLI (for deployment)
-- Virtual environment tool (venv/poetry)
-
+- Virtual environment tool (venv)
+- Cloudinary
 ---
 
 ## Local Development Setup
@@ -146,7 +138,7 @@ pip install -r requirements.txt
 
 ### 4. Create Environment File
 
-Create a .env file in the project root:
+Create a .env file in the project root or use .env.example in the project:
 
 ```bash
 cp .env.example .env
@@ -200,28 +192,9 @@ SECRET_KEY=your-secret-key-here
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Database
-DB_NAME=fitness_pro
-DB_USER=postgres
-DB_PASS=your_password
-DB_HOST=localhost
-DB_PORT=5432
-
-# Redis (Optional, for Celery)
-REDIS_URL=redis://localhost:6379
-
-# Email Configuration (Optional)
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-DEFAULT_FROM_EMAIL=Fitness Pro <noreply@fitnesspro.com>
-
-# Production Settings
-PRODUCTION=False
-CSRF_TRUSTED_ORIGINS=http://localhost:8000
+.
+.
+.
 ```
 ---
 
@@ -361,6 +334,6 @@ fitness_pro/
 
 ## Links
 
-### Live Application: https://fitnesspro.azurewebsites.net
+### Live Application: https://fitnesspro-arhfd9ftcng6dbcr.polandcentral-01.azurewebsites.net/
 ### GitHub Repository: https://github.com/zhiyordness/fitness_pro
 
