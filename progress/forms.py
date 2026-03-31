@@ -2,8 +2,6 @@
 from django import forms
 from django.forms import ModelForm
 
-from common.validators import ImageValidator
-from nutrition.models import Meal
 from progress.models import ProgresTracking
 
 
@@ -28,12 +26,7 @@ class RecordCreateForm(ModelForm):
                 help_text='The date when this record was created.',
             )
 
-    def clean_image(self):
-        image = self.cleaned_data.get('image')
-        if image:
-            validator = ImageValidator()
-            validator(image)
-        return image
+
 
 
 
