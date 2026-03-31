@@ -81,7 +81,7 @@ class ProgresTracking(models.Model):
     )
 
     def __str__(self):
-        return f"Progress for {self.owner.username} on {self.date.strftime('%Y-%m-%d')}"
+        return f"Progress for {self.owner.email} on {self.date.strftime('%Y-%m-%d')}"
 
     class Meta:
         ordering = ['-date']
