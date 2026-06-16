@@ -8,6 +8,8 @@ from choices import WeekDaysChoices
 from common.mixins import StaffRequiredMixin
 from training.forms import TrainingDayCreateForm, ExerciseCreateForm
 from training.models import TrainingDay, Exercise, MuscleGroup
+from training.services import TrainingDayService
+
 
 
 
@@ -61,14 +63,11 @@ class TrainingDayDetailsView(LoginRequiredMixin, DetailView):
         context['muscle_groups'] = training_day.muscle_groups.all()
         context['exercises'] = training_day.exercises.all()
 
-        exercises_by_muscle = {}
-        for exercise in training_day.exercises.all():
-            for muscle in exercise.muscles.all():
-                if muscle.name not in exercises_by_muscle:
-                    exercises_by_muscle[muscle.name] = []
-                exercises_by_muscle[muscle.name].append(exercise)
-
-        context['exercises_by_muscle'] = exercises_by_muscle
+        context['exercises_by_muscle'] = (
+            TrainingDayService.build_exercises_by_muscle(
+                training_day
+            )
+        )
 
         return context
 
@@ -101,7 +100,6 @@ class TrainingDayCreateView(LoginRequiredMixin, CreateView):
         return reverse_lazy('trainings:details', kwargs={'pk': self.object.pk})
 
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -109,28 +107,9 @@ class TrainingDayCreateView(LoginRequiredMixin, CreateView):
 
         muscle_groups = MuscleGroup.objects.prefetch_related('muscles__exercises').all()
 
-        muscle_data = {}
-        for group in muscle_groups:
-            muscle_data[group.id] = {
-                'id': group.id,
-                'name': group.name,
-                'muscles': {}
-            }
-            for muscle in group.muscles.all():
-                muscle_data[group.id]['muscles'][muscle.id] = {
-                    'id': muscle.id,
-                    'name': muscle.name,
-                    'exercises': {}
-                }
-                for exercise in muscle.exercises.all():
-                    muscle_data[group.id]['muscles'][muscle.id]['exercises'][exercise.id] = {
-                        'id': exercise.id,
-                        'name': exercise.name,
-                        'sets': exercise.sets,
-                        'repetitions': exercise.repetitions
-                    }
-
-        context['muscle_data_json'] = json.dumps(muscle_data)
+        context['muscle_data_json'] = (
+            TrainingDayService.build_muscle_data(muscle_groups)
+        )
         return context
 
 
@@ -147,49 +126,18 @@ class TrainingDayEditView(LoginRequiredMixin, UpdateView):
         context['selected_muscle_groups'] = list(training_day.muscle_groups.values_list('id', flat=True))
 
         muscle_groups = MuscleGroup.objects.prefetch_related('muscles__exercises').all()
-        muscle_data = {}
 
-        for group in muscle_groups:
-            muscle_data[group.id] = {
-                'id': group.id,
-                'name': group.name,
-                'muscles': {}
-            }
-            for muscle in group.muscles.all():
-                muscle_data[group.id]['muscles'][muscle.id] = {
-                    'id': muscle.id,
-                    'name': muscle.name,
-                    'exercises': {}
-                }
-                for exercise in muscle.exercises.all():
-                    muscle_data[group.id]['muscles'][muscle.id]['exercises'][exercise.id] = {
-                        'id': exercise.id,
-                        'name': exercise.name,
-                        'sets': exercise.sets,
-                        'repetitions': exercise.repetitions
-                    }
-        context['muscle_data_json'] = json.dumps(muscle_data)
+        context['muscle_data_json'] = (
+            TrainingDayService.build_muscle_data(muscle_groups)
+        )
 
-        selected_exercises = training_day.exercises.select_related().all()
+        selected_exercises = training_day.exercises.all()
 
-        enhanced_exercises = []
-        for exercise in selected_exercises:
-            for group in muscle_groups:
-                for muscle in group.muscles.all():
-                    if exercise in muscle.exercises.all():
-                        enhanced_exercises.append({
-                            'id': exercise.id,
-                            'name': exercise.name,
-                            'sets': exercise.sets,
-                            'repetitions': exercise.repetitions,
-                            'muscle_name': muscle.name,
-                            'group_name': group.name
-                        })
-                        break
-                else:
-                    continue
-                break
-        context['selected_exercises_json'] = json.dumps(enhanced_exercises)
+        context['selected_exercises_json'] = (
+            TrainingDayService.build_selected_exercises(
+                selected_exercises, muscle_groups
+            )
+        )
 
         return context
 
@@ -214,6 +162,11 @@ class TrainingDayEditView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy('trainings:details', kwargs={'pk': self.object.pk})
 
+    def get_queryset(self):
+        return TrainingDay.objects.filter(owner=self.request.user).prefetch_related(
+            'muscle_groups',
+            'exercises__muscles__group'
+        ).select_related('owner')
 
 
 class TrainingDayDeleteView(LoginRequiredMixin, DeleteView):
@@ -224,6 +177,13 @@ class TrainingDayDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, 'Split has been deleted successfully!')
         return super().delete(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return TrainingDay.objects.filter(owner=self.request.user).prefetch_related(
+            'muscle_groups',
+            'exercises__muscles__group'
+        ).select_related('owner')
+
 
 
 class ExerciseListView(ListView):

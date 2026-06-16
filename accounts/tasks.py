@@ -4,6 +4,9 @@ from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -46,9 +49,9 @@ def send_verification_email_task(user_email, verification_link):
 
         return f"Verification email sent to {user_email}"
 
-    except Exception as e:
-        print(f"Failed to send verification email to {user_email}: {e}")
-        raise e
+    except Exception:
+        logger.exception(f"Failed to send verification email to {user_email}")
+        raise
 
 
 @shared_task
@@ -97,7 +100,7 @@ def send_password_reset_email_task(user_email, reset_link, user_first_name=None)
 
         return f"Password reset email sent to {user_email}"
 
-    except Exception as e:
-        print(f"Failed to send password reset email to {user_email}: {e}")
-        raise e
+    except Exception:
+        logger.exception(f"Failed to send password reset email to {user_email}")
+        raise
 

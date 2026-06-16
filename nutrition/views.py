@@ -1,4 +1,3 @@
-from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import When, Case, IntegerField
@@ -9,48 +8,8 @@ from choices import WeekDaysChoices
 from common.mixins import StaffRequiredMixin
 from nutrition.forms import MealForm, MealFoodItemForm, DayCreateForm
 from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase
+from nutrition.services import NutritionCalculator
 
-
-class NutritionCalculator:
-
-    @staticmethod
-    def calculate_meal_totals(meal: Meal) -> dict:
-        totals = {
-            'calories': Decimal('0'),
-            'protein': Decimal('0'),
-            'carbohydrates': Decimal('0'),
-            'fat': Decimal('0'),
-        }
-
-        for item in meal.mealfooditem_set.select_related('food').all():
-
-            item_quantity = 0
-            if item.measure == 'Gr.':
-                item_quantity = item.quantity / Decimal('100')
-            else:
-                item_quantity = item.quantity
-
-            totals['calories'] += item.food.calories * Decimal(item_quantity)
-            totals['protein'] += item.food.protein * Decimal(item_quantity)
-            totals['carbohydrates'] += item.food.carbohydrates * Decimal(item_quantity)
-            totals['fat'] += item.food.fat * Decimal(item_quantity)
-        return totals
-
-    @staticmethod
-    def calculate_day_totals(day):
-        totals = {
-            'calories': 0,
-            'protein': 0,
-            'carbohydrates': 0,
-            'fat': 0,
-        }
-
-        for meal in day.meals.all():
-            meal_totals = NutritionCalculator.calculate_meal_totals(meal)
-            for key in totals:
-                totals[key] += meal_totals[key]
-
-        return totals
 
 class NutritionHomeView(LoginRequiredMixin, ListView):
     model = NutritionDay
@@ -83,7 +42,7 @@ class NutritionHomeView(LoginRequiredMixin, ListView):
         day_totals = {}
 
         for day in days:
-            ordered_meals = day.meals.all().order_by('order')
+            ordered_meals = day.meals.all()
             for meal in ordered_meals:
                 meal.totals = NutritionCalculator.calculate_meal_totals(meal)
             day_totals[day.pk] = NutritionCalculator.calculate_day_totals(day)
@@ -100,6 +59,12 @@ class MealDetailsView(LoginRequiredMixin, DetailView):
     template_name = 'nutrition/meal/meal-details.html'
     context_object_name = 'meal'
     http_method_names = ['get']
+
+    def get_queryset(self):
+        return Meal.objects.filter(day__owner=self.request.user).prefetch_related(
+            'mealfooditem_set__food',
+        )
+
 
 
 class MealCreateView(LoginRequiredMixin, CreateView):
@@ -134,6 +99,10 @@ class MealEditView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details',kwargs={'pk': self.object.day.pk})
 
+    def get_queryset(self):
+        return Meal.objects.filter(day__owner=self.request.user)
+
+
 
 class MealDeleteView(LoginRequiredMixin, DeleteView):
     model = Meal
@@ -146,6 +115,10 @@ class MealDeleteView(LoginRequiredMixin, DeleteView):
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details',kwargs={'pk': self.object.day.pk})
 
+    def get_queryset(self):
+        return Meal.objects.filter(day__owner=self.request.user)
+
+
 
 class ItemAddView(LoginRequiredMixin, CreateView):
     model = MealFoodItem
@@ -153,7 +126,7 @@ class ItemAddView(LoginRequiredMixin, CreateView):
     template_name = 'nutrition/item/item-add.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.meal = get_object_or_404(Meal, pk=self.kwargs['pk'])
+        self.meal = get_object_or_404(Meal, pk=self.kwargs['pk'], day__owner=self.request.user)
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -180,6 +153,10 @@ class ItemDeleteView(LoginRequiredMixin, DeleteView):
             'nutrition:day-details',
             kwargs={'pk': self.object.meal.day.pk}
         )
+
+    def get_queryset(self):
+        return MealFoodItem.objects.filter(meal__day__owner=self.request.user)
+
 
 
 class DayDetailsView(LoginRequiredMixin, DetailView):
@@ -241,6 +218,10 @@ class DayDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse_lazy('nutrition:nutrition-home')
+
+    def get_queryset(self):
+        return NutritionDay.objects.filter(owner=self.request.user)
+
 
 
 class DayEditView(LoginRequiredMixin, UpdateView):

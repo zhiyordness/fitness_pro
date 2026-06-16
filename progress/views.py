@@ -43,16 +43,17 @@ class RecordEditView(UpdateView):
         messages.success(self.request, 'Record has been updated successfully!')
         return super().form_valid(form)
 
+    def get_queryset(self):
+        return ProgresTracking.objects.filter(owner=self.request.user)
+
 
 class RecordDetailsView(DetailView):
     model = ProgresTracking
     template_name = 'progress/record/record-details.html'
     context_object_name = 'record'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['record'] = ProgresTracking.objects.get(pk=self.kwargs['pk'])
-        return context
+    def get_queryset(self):
+        return ProgresTracking.objects.filter(owner=self.request.user)
 
 
 class RecordListView(ListView):
@@ -75,3 +76,6 @@ class RecordDeleteView(DeleteView):
     def form_valid(self, form):
         messages.success(self.request, 'Record has been deleted successfully!')
         return super().form_valid(form)
+
+    def get_queryset(self):
+        return ProgresTracking.objects.filter(owner=self.request.user)

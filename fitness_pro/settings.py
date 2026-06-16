@@ -41,6 +41,7 @@ PROJECT_APPS = [
     'progress',
     'accounts.apps.AccountsConfig',
     'api',
+    'debug_toolbar',
 ]
 
 INSTALLED_APPS = [
@@ -60,6 +61,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -237,3 +239,7 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
