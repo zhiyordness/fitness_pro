@@ -38,9 +38,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -48,6 +48,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'common.middleware.RateLimitMiddleware',
 ]
+
+if DEBUG:
+    MIDDLEWARE.insert(
+        2,
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    )
 
 
 SECURE_SSL_REDIRECT = True

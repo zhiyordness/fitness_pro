@@ -59,9 +59,8 @@ INSTALLED_APPS = [
 ] + PROJECT_APPS
 
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,6 +70,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'common.middleware.RateLimitMiddleware',
 ]
+
+if DEBUG:
+    MIDDLEWARE.insert(
+        2,
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    )
 
 ROOT_URLCONF = 'fitness_pro.urls'
 
