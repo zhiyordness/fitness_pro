@@ -17,6 +17,9 @@ urlpatterns = [
     ])),
     path('', include([
         path('meal/', include([
+            path('<int:meal_pk>/complete/', views.MealCompleteView.as_view(), name='meal-complete'),
+            path('<int:meal_pk>/missed/', views.MealMissedView.as_view(), name='meal-missed'),
+            path('<int:meal_pk>/planned/', views.MealPlannedView.as_view(), name='meal-planned'),
             path('<int:meal_pk>/item/<int:pk>/delete/', views.ItemDeleteView.as_view(), name='item-delete'),
             path('<int:pk>/', include([
                 path('add-item/', views.ItemAddView.as_view(), name='item-add'),

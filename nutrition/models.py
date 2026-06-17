@@ -1,9 +1,12 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from choices import MealTypeChoices, WeekDaysChoices, MeasurementsChoices
+from choices import MealTypeChoices, WeekDaysChoices, MeasurementsChoices, MealStatusChoices
 from common.models import BaseModel
+
+from django.utils import timezone
 
 UserModel = get_user_model()
 
@@ -152,3 +155,81 @@ class NutritionDay(models.Model):
 
 
 
+class MealCompletion(models.Model):
+    meal = models.ForeignKey(
+        Meal,
+        on_delete=models.CASCADE,
+        related_name='completions',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='meal_completions',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=MealStatusChoices.choices,
+        default=MealStatusChoices.PLANNED,
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    status_updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    def save(self, *args, **kwargs):
+
+        if self.status == MealStatusChoices.COMPLETED:
+            if not self.completed_at:
+                self.completed_at = timezone.now()
+
+        else:
+            self.completed_at = None
+
+        super().save(*args, **kwargs)
+
+
+class NutritionTarget(models.Model):
+    user = models.OneToOneField(
+        'accounts.FitnessProUser',
+        on_delete=models.CASCADE,
+        related_name='nutrition_target',
+    )
+
+    calories = models.PositiveIntegerField()
+
+    protein = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+    )
+
+    carbohydrates = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+    )
+
+    fat = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    def __str__(self):
+        return f"{self.user.email} Nutrition Target"

@@ -1,140 +1,621 @@
 {% extends 'common/base.html' %}
-{% load static %}
+{% load i18n %}
 
 {% block content %}
-<div class="container mt-4 d-flex flex-column align-items-center">
-    <div class="jumbotron bg-dark text-white text-center p-5 rounded">
-        <h1 class="display-4">Welcome to Fitness Pro</h1>
-        <p class="lead">Track your training days, nutrition and progress</p>
-        <span class="badge bg-light text-dark mb-3">{{ today_date|date:"D, d-m-Y" }}</span>
-    {% if request.user.is_authenticated %}
-        {% if not training_days %}
-        <hr class="my-4 bg-white">
-        <p>Get started by creating your first training day</p>
-        <a class="btn btn-light btn-lg" href="{% url 'trainings:training-day-create' %}" role="button">
-            Create Training Day
-        </a>
+
+<div class="container py-4">
+
+```
+<!-- Dashboard Header -->
+<div class="card shadow-sm h-100 mb-4">
+<div class="text-center mb-4">
+    <h1 class="display-6">
+        {% trans "Welcome back" %}, {{ request.user.profile.first_name|default:request.user.email }}
+    </h1>
+
+    <p class="text-muted">
+        {% trans "Your fitness journey at a glance" %}
+    </p>
+</div>
+</div>
+
+<!-- KPI Cards -->
+
+<div class="row g-3 mb-4">
+
+    <div class="col-6 col-lg-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <small class="text-muted">{% trans "Current Weight" %}</small>
+                <h3 class="mb-0">
+                    {% if dashboard.current_weight %}
+                        {{ dashboard.current_weight }} kg
+                    {% else %}
+                        —
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <small class="text-muted">{% trans "Target Weight" %}</small>
+                <h3 class="mb-0">
+                    {% if dashboard.target_weight %}
+                        {{ dashboard.target_weight }} kg
+                    {% else %}
+                        —
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <small class="text-muted">{% trans "Remaining to Goal" %}</small>
+                <h3 class="mb-0">
+                    {% if dashboard.remaining_weight %}
+                        {{ dashboard.remaining_weight }} kg
+                    {% else %}
+                        —
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <small class="text-muted">{% trans "Last Change" %}</small>
+                <h3 class="mb-0">
+                    {{ dashboard.weight_change }} kg
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">🎯 Goal Progress</h5>
+    </div>
+
+    <div class="card-body">
+
+        {% if dashboard.goal_progress is not None %}
+
+            <div class="progress mb-3" style="height: 25px;">
+                <div
+                    class="progress-bar"
+                    role="progressbar"
+                    style="width: {{ dashboard.goal_progress }}%;"
+                    aria-valuenow="{{ dashboard.goal_progress }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                >
+                    {{ dashboard.goal_progress }}%
+                </div>
+            </div>
+
+            <p class="mb-0">
+                Current:
+                <strong>{{ dashboard.current_weight }} kg</strong>
+                →
+                Target:
+                <strong>{{ dashboard.target_weight }} kg</strong>
+            </p>
+
+        {% else %}
+
+            <p class="mb-0">
+                Set your target weight and add progress records to see your goal progress.
+            </p>
+
         {% endif %}
-    {% endif %}
+
     </div>
 </div>
-{% if request.user.is_authenticated %}
-<div class="container my-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card bg-light mb-2">
-            <img src="{% static 'images/pexels-gustavo-fring-8769370.jpg' %}" class="card-img-top"  alt="Next Meal">
-                <div class="card-header bg-dark text-white">
-                    <div class="row">
-                        <div class="col-12">
-                            <h2 class="text-white mb-3">Today's Training: {{ training_day.day }}</h2>
-                            <span class="card-text">{{ training_day.description|capfirst }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body bg-light text-dark">
-                    <div class="row">
-                        {% if training_day %}
-                            <div class="col-md-12 mb-0">
-                                    <div class="card-body">
-                                        {% if training_day.exercises %}
-                                            <p class="card-text">
-                                                <small class="text-dark">
-                                                    Number of exercises:
-                                                    <span class="badge bg-warning text-dark">{{ training_day.exercises.count }}</span>
-                                                </small>
-                                            <br>
-                                                <small class="text-dark">
-                                                    Muscle Groups:
-                                                    {% for group in training_day.muscle_groups.all %}
-                                                        <span class="badge bg-warning text-dark">{{ group.name }}</span>
-                                                    {% empty %}
-                                                        <p>No muscle groups assigned to this training day.</p>
-                                                    {% endfor %}
-                                                </small>
-                                            <br>
-                                                <small class="text-dark">
-                                                        Exercises:
-                                                        {% for exercise in training_day.exercises.all %}
-                                                        <span class="badge bg-warning text-dark">{{ exercise }} - {{ exercise.sets }} sets</span>
-                                                        {% empty %}
-                                                            <p>No exercises assigned to this training day.</p>
-                                                        {% endfor %}
-                                                </small>
-                                            </p>
-                                        {% endif %}
-                                        <a href="{% url 'trainings:details' training_day.pk%}" class="btn btn-success btn-sm">
-                                            View Details
-                                        </a>
-                                    </div>
-                            </div>
-                        {% else %}
-                            <div class="col-12">
-                                <p class="text-dark">No training today.
-                                    <a href="{% url 'trainings:training-day-create' %}">Create one now!</a>
-                                </p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+</div>
+
+<!-- Workout & Nutrition -->
+
+<div class="row g-4 mb-4">
+
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header">
+                <h5 class="mb-0">
+                    🏋️ {% trans "Today's Workout" %}
+                </h5>
             </div>
+
+            <div class="card-body">
+
+                {% if dashboard.training_day %}
+
+                    <h4>{{ dashboard.training_day.day }}</h4>
+
+                    <p>
+                        <strong>
+                            {{ dashboard.training_day.exercises.count }}
+                        </strong>
+                        {% trans "Exercises" %}
+                    </p>
+
+                    <div class="mb-3">
+                        {% for group in dashboard.training_day.muscle_groups.all %}
+                            <span class="badge bg-primary">
+                                {{ group.name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+
+                    <a href="{% url 'trainings:details' dashboard.training_day.pk %}"
+                       class="btn btn-success">
+                        {% trans "View Workout" %}
+                    </a>
+
+                {% else %}
+
+                    <p>{% trans "No workout planned for today." %}</p>
+
+                    <a href="{% url 'trainings:training-day-create' %}"
+                       class="btn btn-primary">
+                        {% trans "Create Training Day" %}
+                    </a>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header">
+                <h5 class="mb-0">
+                    🍽 {% trans "Nutrition" %}
+                </h5>
+            </div>
+
+            <div class="card-body">
+
+                {% if dashboard.next_meal %}
+
+                    <h4>{{ dashboard.next_meal.name }}</h4>
+
+                    <p>
+                        <strong>{% trans "Time" %}:</strong>
+                        {{ dashboard.next_meal.time }}
+                    </p>
+
+                    <p>
+                        <strong>{% trans "Calories" %}:</strong>
+                        {{ dashboard.total_calories|floatformat:0 }} kcal
+                    </p>
+
+                    {% if dashboard.meal_status == "Planned" %}
+
+                        <div class="d-flex gap-2 mb-3">
+
+                            <form method="post"
+                                  action="{% url 'nutrition:meal-complete' dashboard.next_meal.pk %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-success btn-sm">
+                                    ✓ {% trans "Complete Meal" %}
+                                </button>
+                            </form>
+
+                            <form method="post"
+                                  action="{% url 'nutrition:meal-missed' dashboard.next_meal.pk %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-outline-danger btn-sm">
+                                    ✗ {% trans "Missed" %}
+                                </button>
+                            </form>
+
+                        </div>
+
+                    {% elif dashboard.meal_status == "Completed" %}
+
+                        <div class="mb-3">
+                            <span class="badge bg-success fs-6">
+                                ✓ {% trans "Completed" %}
+                            </span>
+                        </div>
+
+                    {% elif dashboard.meal_status == "Missed" %}
+
+                        <div class="mb-3">
+                            <span class="badge bg-danger fs-6">
+                                ✗ {% trans "Missed" %}
+                            </span>
+                        </div>
+
+                    {% endif %}
+
+                {% else %}
+
+                    <p>{% trans "No upcoming meals." %}</p>
+
+                {% endif %}
+
+                <a href="{% url 'nutrition:nutrition-home' %}"
+                   class="btn btn-primary">
+                    {% trans "View Nutrition" %}
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header">
+                <h5 class="mb-0">
+                    📊 {% trans "Daily Nutrition" %}
+                </h5>
+            </div>
+
+            <div class="card-body">
+
+                 <!-- Calories -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Calories" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.completed_nutrition.calories|floatformat:0 }}
+                    /
+                    {{ dashboard.nutrition_target.calories }}
+                    kcal
+                </small>
+
+                <div class="progress mb-3">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.nutrition_progress.calories }}%">
+                        {{ dashboard.nutrition_progress.calories }}%
+                    </div>
+                </div>
+
+
+                <!-- Protein -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Protein" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.completed_nutrition.protein|floatformat:0 }}
+                    /
+                    {{ dashboard.nutrition_target.protein|floatformat:0 }}
+                    g
+                </small>
+
+                <div class="progress mb-3">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.nutrition_progress.protein }}%">
+                        {{ dashboard.nutrition_progress.protein }}%
+                    </div>
+                </div>
+
+
+                <!-- Carbohydrates -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Carbohydrates" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.completed_nutrition.carbohydrates|floatformat:0 }}
+                    /
+                    {{ dashboard.nutrition_target.carbohydrates|floatformat:0 }}
+                    g
+                </small>
+
+                <div class="progress mb-3">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.nutrition_progress.carbohydrates }}%">
+                        {{ dashboard.nutrition_progress.carbohydrates }}%
+                    </div>
+                </div>
+
+
+                <!-- Fat -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Fat" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.completed_nutrition.fat|floatformat:0 }}
+                    /
+                    {{ dashboard.nutrition_target.fat|floatformat:0 }}
+                    g
+                </small>
+
+                <div class="progress">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.nutrition_progress.fat }}%">
+                        {{ dashboard.nutrition_progress.fat }}%
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header">
+                <h5 class="mb-0">
+                    📈 {% trans "Weekly Nutrition" %}
+                </h5>
+            </div>
+
+            <div class="card-body">
+
+                <!-- Calories -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Calories" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.weekly_nutrition.calories|floatformat:0 }}
+                    /
+                    {{ dashboard.weekly_targets.calories|floatformat:0 }}
+                    kcal
+                </small>
+
+                <div class="progress mb-3">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.weekly_progress.calories }}%">
+                        {{ dashboard.weekly_progress.calories }}%
+                    </div>
+                </div>
+
+                <!-- Protein -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Protein" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.weekly_nutrition.protein|floatformat:0 }}
+                    /
+                    {{ dashboard.weekly_targets.protein|floatformat:0 }}
+                    g
+                </small>
+
+                <div class="progress mb-3">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.weekly_progress.protein }}%">
+                        {{ dashboard.weekly_progress.protein }}%
+                    </div>
+                </div>
+
+                <!-- Carbohydrates -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Carbohydrates" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.weekly_nutrition.carbohydrates|floatformat:0 }}
+                    /
+                    {{ dashboard.weekly_targets.carbohydrates|floatformat:0 }}
+                    g
+                </small>
+
+                <div class="progress mb-3">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.weekly_progress.carbohydrates }}%">
+                        {{ dashboard.weekly_progress.carbohydrates }}%
+                    </div>
+                </div>
+
+                <!-- Fat -->
+
+                <p class="mb-1">
+                    <strong>{% trans "Fat" %}</strong>
+                </p>
+
+                <small>
+                    {{ dashboard.weekly_nutrition.fat|floatformat:0 }}
+                    /
+                    {{ dashboard.weekly_targets.fat|floatformat:0 }}
+                    g
+                </small>
+
+                <div class="progress">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: {{ dashboard.weekly_progress.fat }}%">
+                        {{ dashboard.weekly_progress.fat }}%
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                <h5 class="mb-0">
+                    🔥 {% trans "Meal Consistency" %}
+                </h5>
+            </div>
+
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">
+                    {% trans "Consistency Score" %}
+                </h6>
+
+                <h1 class="display-4 mb-3">
+                    {{ dashboard.meal_consistency.consistency_score|floatformat:1 }}%
+                </h1>
+
+                <p class="text-muted">
+                    {% trans "Last 7 Days" %}
+                </p>
+
+                <hr>
+
+                <div class="row">
+
+                    <div class="col-md-4">
+                        <h5 class="text-success">
+                            {{ dashboard.meal_consistency.completed_count }}
+                        </h5>
+
+                        <small>
+                            {% trans "Completed Meals" %}
+                        </small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <h5 class="text-danger">
+                            {{ dashboard.meal_consistency.missed_count }}
+                        </h5>
+
+                        <small>
+                            {% trans "Missed Meals" %}
+                        </small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <h5 class="text-warning">
+                            {{ dashboard.meal_consistency.planned_count }}
+                        </h5>
+
+                        <small>
+                            {% trans "Planned Meals" %}
+                        </small>
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
     </div>
 </div>
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="{% static 'images/96c38b59-6b2b-4720-b2d7-371a7b894fc0.jpeg' %}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="Next Meal">
-                        <div class="card-header bg-dark text-white mb-3">
-                            <h5 class="card-title">Nutrition</h5>
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            {% if next_meal %}
-                                <h5 class="card-title">Next Meal: {{ next_meal.name }}</h5>
-                                <p class="card-text">Time: {{ next_meal.time }}</p>
-                            {% else %}
-                                <h5 class="card-title">Next Meal: None</h5>
-                                <p class="card-text">Time: None</p>
-                            {% endif %}
-                            <small class="text-dark">
-                                Includes:
-                                {% for item in meal_items.all %}
-                                <span class="badge bg-warning text-dark">{{ item }} </span>
-                                {% empty %}
-                                    <span class="badge bg-warning text-dark">No food items for this meal.</span>
-                                {% endfor %}
-                            </small>
-                        <br>
-                            <small class="text-dark">
-                                Total Calories:
-                                <span class="badge bg-warning text-dark">{{ total_calories|floatformat:2 }} kcal.</span>
-                            </small>
-                            <br>
-                            <a href="{% url 'nutrition:nutrition-home' %}" class="btn btn-success mt-auto">View Nutrition</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="{% static 'images/Weight-Loss-Program.jpg' %}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="Progress Tracking">
-                        <div class="card-header bg-dark text-white mb-3">
-                            <h5 class="card-title">Your Progress</h5>
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            <p class="card-text">Current Weight: {{ current_weight_record.weight }} kg.</p>
-                            <p class="card-text">Weight Change: {{ weight_change }} kg from last record</p>
-                            <a href="{% url 'progress:overview' %}" class="btn btn-success mt-auto">View Progress</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+<!-- Progress Snapshot -->
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-header">
+        <h5 class="mb-0">
+            📈 {% trans "Progress Snapshot" %}
+        </h5>
     </div>
+
+    <div class="card-body">
+
+        <div class="row text-center">
+
+            <div class="col-6">
+                <small class="text-muted">
+                    {% trans "Current Weight" %}
+                </small>
+
+                <h4>
+                    {% if dashboard.current_weight %}
+                        {{ dashboard.current_weight }} kg
+                    {% else %}
+                        —
+                    {% endif %}
+                </h4>
+            </div>
+
+            <div class="col-6">
+                <small class="text-muted">
+                    {% trans "Weight Change" %}
+                </small>
+
+                <h4>
+                    {{ dashboard.weight_change }} kg
+                </h4>
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
-{% else %}
-    Log in form here
-{% endif %}
+
+<!-- Quick Actions -->
+
+<div class="card shadow-sm">
+
+    <div class="card-header">
+        <h5 class="mb-0">
+            ⚡ {% trans "Quick Actions" %}
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row g-2">
+
+            <div class="col-12 col-md-6">
+                <a href="{% url 'progress:record-create' %}"
+                   class="btn btn-outline-primary w-100">
+                    {% trans "Add Progress Record" %}
+                </a>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <a href="{% url 'trainings:training-day-create' %}"
+                   class="btn btn-outline-success w-100">
+                    {% trans "Create Training Day" %}
+                </a>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <a href="{% url 'nutrition:nutrition-home' %}"
+                   class="btn btn-outline-warning w-100">
+                    {% trans "View Nutrition" %}
+                </a>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <a href="{% url 'accounts:profile-details' request.user.profile.pk %}"
+                   class="btn btn-outline-dark w-100">
+                    {% trans "Edit Profile" %}
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+```
+
+</div>
+
 {% endblock %}

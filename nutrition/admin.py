@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 
-from nutrition.models import FoodDatabase, Meal, MealFoodItem, NutritionDay
+from nutrition.models import FoodDatabase, Meal, MealFoodItem, NutritionDay, MealCompletion, NutritionTarget
 
 
 # Register your models here.
@@ -29,4 +29,18 @@ class NutritionDayAdmin(admin.ModelAdmin):
     list_display = ['name']
     search_fields = ['name']
     list_filter = ['name']
+
+@admin.register(MealCompletion)
+class MealCompletionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'meal', 'status']
+    search_fields = ['meal__name']
+    list_filter = ['status', 'completed_at']
+
+
+@admin.register(NutritionTarget)
+class NutritionTargetAdmin(admin.ModelAdmin):
+    list_display = ['user', 'calories', 'protein', 'carbohydrates', 'fat']
+    search_fields = ['user__email']
+
+
 

@@ -71,6 +71,12 @@ class Profile(models.Model):
         null=True,
         blank=True,
     )
+    starting_weight = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
     target_weight = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -107,6 +113,15 @@ class Profile(models.Model):
             ImageValidator(),
         ],
         help_text='Upload a profile picture (max size: 5MB, min: 200x200px, formats: JPEG, PNG).'
+    )
+    preferred_language = models.CharField(
+        max_length=2,
+        choices=[
+            ('en', 'English'),
+            ('bg', 'Bulgarian'),
+            ('ru', 'Russian'),
+        ],
+        default='en',
     )
 
     def __str__(self):

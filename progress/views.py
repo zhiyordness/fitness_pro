@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
 from progress.forms import RecordCreateForm
 from progress.models import ProgresTracking
-
+from django.utils.translation import gettext_lazy as _
 UserModel = get_user_model()
 
 class ProgressOverviewView(LoginRequiredMixin, ListView):
@@ -29,8 +29,17 @@ class RecordCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
-        messages.success(self.request, 'Record has been created successfully!')
-        return super().form_valid(form)
+
+        response = super().form_valid(form)
+
+        profile = self.request.user.profile
+
+        if profile and not profile.starting_weight:
+            profile.starting_weight = self.object.weight
+            profile.save(update_fields=['starting_weight'])
+
+        messages.success(self.request, _('Record has been created successfully!'))
+        return response
 
 
 class RecordEditView(UpdateView):
@@ -40,7 +49,7 @@ class RecordEditView(UpdateView):
     success_url = reverse_lazy('progress:overview')
 
     def form_valid(self, form):
-        messages.success(self.request, 'Record has been updated successfully!')
+        messages.success(self.request, _('Record has been updated successfully!'))
         return super().form_valid(form)
 
     def get_queryset(self):
@@ -74,7 +83,7 @@ class RecordDeleteView(DeleteView):
     success_url = reverse_lazy('progress:overview')
 
     def form_valid(self, form):
-        messages.success(self.request, 'Record has been deleted successfully!')
+        messages.success(self.request, _('Record has been deleted successfully!'))
         return super().form_valid(form)
 
     def get_queryset(self):

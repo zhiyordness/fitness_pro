@@ -1,0 +1,213 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-16 16:23+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: accounts/admin.py:26
+msgid "Personal info"
+msgstr "Личная информация"
+
+#: accounts/admin.py:28
+msgid "Permissions"
+msgstr "Права доступа"
+
+#: accounts/admin.py:40
+msgid "Important dates"
+msgstr "Важные даты"
+
+#: accounts/views.py:33
+msgid ""
+"Your account has been created successfully! Please check your email to "
+"verify your account."
+msgstr "Ваш аккаунт успешно создан! Пожалуйста, проверьте свою электронную почту для подтверждения аккаунта."
+
+#: accounts/views.py:36
+msgid "Registration failed due to email delivery issue. Please try again."
+msgstr "Регистрация не удалась из-за проблемы с отправкой письма. Пожалуйста, попробуйте снова."
+
+#: accounts/views.py:41
+msgid ""
+"There was an error with your registration. Please correct the errors below "
+"and try again."
+msgstr "Произошла ошибка при регистрации. Пожалуйста, исправьте ошибки ниже и попробуйте снова."
+
+#: accounts/views.py:70
+msgid "Your profile has been updated successfully!"
+msgstr "Ваш профиль был успешно обновлён!"
+
+#: accounts/views.py:98
+msgid "Your profile has been deleted successfully!"
+msgstr "Ваш профиль был успешно удалён!"
+
+#: accounts/views.py:136
+msgid "This verification link has expired. Please request a new one."
+msgstr "Срок действия этой ссылки подтверждения истёк. Пожалуйста, запросите новую."
+
+#: accounts/views.py:142
+msgid "Your email is already verified. Please log in."
+msgstr "Ваш адрес электронной почты уже подтверждён. Пожалуйста, войдите в аккаунт."
+
+#: accounts/views.py:151
+msgid ""
+"Your email has been verified successfully! Your account is now active. You "
+"can now log in."
+msgstr "Ваш адрес электронной почты успешно подтверждён! Ваш аккаунт теперь активен. Теперь вы можете войти в систему."
+
+#: accounts/views.py:175
+msgid ""
+"If an account with that email exists and is not verified, a verification "
+"email has been sent."
+msgstr "Если аккаунт с таким адресом электронной почты существует и ещё не подтверждён, письмо для подтверждения было отправлено."
+
+#: common/validators.py:33
+msgid ", "
+msgstr ", "
+
+#: common/validators.py:61
+msgid "Invalid image file"
+msgstr "Недопустимый файл изображения"
+
+#: nutrition/views.py:80
+msgid "The Meal has been created successfully!"
+msgstr "Приём пищи успешно создан!"
+
+#: nutrition/views.py:96
+msgid "The meal has been updated successfully!"
+msgstr "Приём пищи успешно обновлён!"
+
+#: nutrition/views.py:112
+msgid "The meal has been deleted successfully!"
+msgstr "Приём пищи успешно удалён!"
+
+#: nutrition/views.py:134 nutrition/views.py:270
+msgid "The item has been created successfully!"
+msgstr "Элемент успешно создан!"
+
+#: nutrition/views.py:204
+msgid "The day has been created successfully!"
+msgstr "День успешно создан!"
+
+#: nutrition/views.py:216
+msgid "The day has been deleted successfully!"
+msgstr "День успешно удалён!"
+
+#: nutrition/views.py:233
+msgid "The day has been updated successfully!"
+msgstr "День успешно обновлён!"
+
+#: nutrition/views.py:283
+msgid "The item has been deleted successfully!"
+msgstr "Элемент успешно удалён!"
+
+#: nutrition/views.py:297
+msgid "The item has been updated successfully!"
+msgstr "Элемент успешно обновлён!"
+
+#: progress/views.py:32
+msgid "Record has been created successfully!"
+msgstr "Запись успешно создана!"
+
+#: progress/views.py:43
+msgid "Record has been updated successfully!"
+msgstr "Запись успешно обновлена!"
+
+#: progress/views.py:77
+msgid "Record has been deleted successfully!"
+msgstr "Запись успешно удалена!"
+
+#: templates/common/nav.html:15
+msgid "Libraries"
+msgstr "Библиотеки"
+
+#: templates/common/nav.html:20
+msgid "Food Database"
+msgstr "База продуктов"
+
+#: templates/common/nav.html:25
+msgid "Exercise Library"
+msgstr "Библиотека упражнений"
+
+#: templates/common/nav.html:34
+msgid "Training Days"
+msgstr "Тренировки"
+
+#: templates/common/nav.html:37
+msgid "Nutrition"
+msgstr "Питание"
+
+#: templates/common/nav.html:40
+msgid "Progress"
+msgstr "Прогресс"
+
+#: templates/common/nav.html:91
+msgid "Profile"
+msgstr "Профиль"
+
+#: templates/common/nav.html:100
+msgid "Logout"
+msgstr "Выход"
+
+#: templates/common/nav.html:109
+msgid "Admin"
+msgstr "Администрирование"
+
+#: templates/common/nav.html:114
+msgid "Manage Foods"
+msgstr "Управление продуктами"
+
+#: templates/common/nav.html:119
+msgid "Manage Exercises"
+msgstr "Управление упражнениями"
+
+#: templates/common/nav.html:125
+msgid "Django Admin"
+msgstr "Django Админ"
+
+#: templates/common/nav.html:134
+msgid "Login"
+msgstr "Вход"
+
+#: templates/common/nav.html:137
+msgid "Sign Up"
+msgstr "Регистрация"
+
+#: training/views.py:96
+msgid "The training day has been created successfully!"
+msgstr "Тренировочный день успешно создан!"
+
+#: training/views.py:159
+msgid "The training day has been updated successfully!"
+msgstr "Тренировочный день успешно обновлён!"
+
+#: training/views.py:178
+msgid "The training day has been deleted successfully!"
+msgstr "Тренировочный день успешно удалён!"
+
+#: training/views.py:215
+msgid "Exercise has been created successfully!"
+msgstr "Упражнение успешно создано!"
+
+#: training/views.py:225
+msgid "Exercise has been updated successfully!"
+msgstr "Упражнение успешно обновлено!"
+
+#: training/views.py:238
+msgid "Exercise has been deleted successfully!"
+msgstr "Упражнение успешно удалено!"

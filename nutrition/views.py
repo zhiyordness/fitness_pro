@@ -1,15 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import When, Case, IntegerField
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView, ListView
-from choices import WeekDaysChoices
+from choices import WeekDaysChoices, MealStatusChoices
 from common.mixins import StaffRequiredMixin
 from nutrition.forms import MealForm, MealFoodItemForm, DayCreateForm
-from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase
-from nutrition.services import NutritionCalculator
-
+from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase, MealCompletion
+from nutrition.services import NutritionCalculator, NutritionService
+from django.utils.translation import gettext_lazy as _
 
 class NutritionHomeView(LoginRequiredMixin, ListView):
     model = NutritionDay
@@ -45,6 +46,11 @@ class NutritionHomeView(LoginRequiredMixin, ListView):
             ordered_meals = day.meals.all()
             for meal in ordered_meals:
                 meal.totals = NutritionCalculator.calculate_meal_totals(meal)
+                meal.status = NutritionService.get_meal_status(
+                    meal,
+                    self.request.user,
+                )
+
             day_totals[day.pk] = NutritionCalculator.calculate_day_totals(day)
             day.ordered_meals = ordered_meals
 
@@ -77,7 +83,7 @@ class MealCreateView(LoginRequiredMixin, CreateView):
         meal_name = form.cleaned_data['name']
         form.instance.order = Meal.get_order_for_name(meal_name)
         form.instance.day = day
-        messages.success(self.request, 'The Meal has been created successfully!')
+        messages.success(self.request, _('The Meal has been created successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -93,7 +99,7 @@ class MealEditView(LoginRequiredMixin, UpdateView):
         meal_name = form.cleaned_data['name']
         form.instance.order = Meal.get_order_for_name(meal_name)
 
-        messages.success(self.request, 'The meal has been updated successfully!')
+        messages.success(self.request, _('The meal has been updated successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -109,7 +115,7 @@ class MealDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'nutrition/meal/meal-delete.html'
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'The meal has been deleted successfully!')
+        messages.success(self.request, _('The meal has been deleted successfully!'))
         return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -131,7 +137,7 @@ class ItemAddView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.meal = self.meal
-        messages.success(self.request, 'The item has been created successfully!')
+        messages.success(self.request, _('The item has been created successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -201,7 +207,7 @@ class DayCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
-        messages.success(self.request, 'The day has been created successfully!')
+        messages.success(self.request, _('The day has been created successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -213,7 +219,7 @@ class DayDeleteView(LoginRequiredMixin, DeleteView):
     context_object_name = 'day'
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'The day has been deleted successfully!')
+        messages.success(self.request, _('The day has been deleted successfully!'))
         return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -230,7 +236,7 @@ class DayEditView(LoginRequiredMixin, UpdateView):
     template_name = 'nutrition/day/day-edit.html'
 
     def form_valid(self, form):
-        messages.success(self.request, 'The day has been updated successfully!')
+        messages.success(self.request, _('The day has been updated successfully!'))
         return super().form_valid(form)
 
     def get_queryset(self):
@@ -267,7 +273,7 @@ class FoodDatabaseCreateView(StaffRequiredMixin, CreateView):
     template_name = 'nutrition/food-database/food-database-create.html'
 
     def form_valid(self, form):
-        messages.success(self.request, 'The item has been created successfully!')
+        messages.success(self.request, _('The item has been created successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -280,7 +286,7 @@ class FoodDatabaseDeleteView(StaffRequiredMixin, DeleteView):
     context_object_name = 'food'
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'The item has been deleted successfully!')
+        messages.success(self.request, _('The item has been deleted successfully!'))
         return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -294,9 +300,82 @@ class FoodDatabaseEditView(StaffRequiredMixin, UpdateView):
     context_object_name = 'food'
 
     def form_valid(self, form):
-        messages.success(self.request, 'The item has been updated successfully!')
+        messages.success(self.request, _('The item has been updated successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('nutrition:food-database-list')
 
+
+class MealCompleteView(LoginRequiredMixin, View):
+
+    def post(self, request, meal_pk):
+
+        meal = get_object_or_404(
+            Meal.objects.filter(
+                day__owner=request.user,
+            ),
+            pk=meal_pk,
+        )
+
+        NutritionService.complete_meal(
+            meal=meal,
+            user=request.user,
+        )
+
+        messages.success(
+            request,
+            _('Meal marked as completed!')
+        )
+
+        return redirect('common:home')
+
+
+class MealMissedView(LoginRequiredMixin, View):
+
+    def post(self, request, meal_pk):
+
+        meal = get_object_or_404(
+            Meal.objects.filter(
+                day__owner=request.user,
+            ),
+            pk=meal_pk,
+        )
+
+        NutritionService.miss_meal(
+            meal=meal,
+            user=request.user,
+        )
+
+        messages.success(
+            request,
+            _('Meal marked as missed!')
+        )
+
+        return redirect('common:home')
+
+
+class MealPlannedView(LoginRequiredMixin, View):
+
+    def post(self, request, meal_pk):
+
+        meal = get_object_or_404(
+            Meal,
+            pk=meal_pk,
+        )
+
+        completion = MealCompletion.objects.filter(
+            meal=meal,
+            user=request.user,
+        ).first()
+
+        if completion:
+            completion.status = MealStatusChoices.PLANNED
+            completion.save()
+
+        messages.success(
+            request,
+            _('Meal reset to planned!')
+        )
+
+        return redirect('nutrition:nutrition-home')

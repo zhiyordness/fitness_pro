@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 from django.views.generic import CreateView, DetailView, UpdateView, DeleteView, RedirectView
-
+from django.utils.translation import gettext_lazy as _
 from accounts.email_verif import send_verification_email
 from accounts.forms import FitnessProUserCreationForm, ProfileForm, UserDeleteForm
 from accounts.models import Profile, EmailVerificationToken, FitnessProUser
@@ -30,15 +30,15 @@ class FitnessProUserRegisterView(CreateView):
 
         success, message = send_verification_email(self.request, self.object)
         if success:
-            messages.success(self.request, 'Your account has been created successfully! Please check your email to verify your account.')
+            messages.success(self.request, _('Your account has been created successfully! Please check your email to verify your account.'))
         else:
             self.object.delete()
-            messages.error(self.request, 'Registration failed due to email delivery issue. Please try again.')
+            messages.error(self.request, _('Registration failed due to email delivery issue. Please try again.'))
             return self.form_invalid(form)
         return redirect('accounts:login')
 
     def form_invalid(self, form):
-        messages.error(self.request, 'There was an error with your registration. Please correct the errors below and try again.')
+        messages.error(self.request, _('There was an error with your registration. Please correct the errors below and try again.'))
         return super().form_invalid(form)
 
 
@@ -67,7 +67,7 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return self.request.user.profile
 
     def form_valid(self, form):
-        messages.success(self.request, 'Your profile has been updated successfully!')
+        messages.success(self.request, _('Your profile has been updated successfully!'))
         return super().form_valid(form)
 
 
@@ -95,7 +95,7 @@ class DeleteUserView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         response = super().delete(request, *args, **kwargs)
         logout(request)
-        messages.success(self.request, 'Your profile has been deleted successfully!')
+        messages.success(self.request, _('Your profile has been deleted successfully!'))
         return response
 
     def get_success_url(self):
@@ -133,13 +133,13 @@ class VerifyEmailView(View):
 
         token_object = get_object_or_404(EmailVerificationToken, token=token)
         if not token_object.is_valid():
-            messages.error(request, 'This verification link has expired. Please request a new one.')
+            messages.error(request, _('This verification link has expired. Please request a new one.'))
             return redirect('accounts:resend-verification')
 
         user = token_object.user
 
         if user.is_email_verified:
-            messages.info(request, 'Your email is already verified. Please log in.')
+            messages.info(request, _('Your email is already verified. Please log in.'))
             return redirect('accounts:login')
 
         user.is_email_verified = True
@@ -148,7 +148,7 @@ class VerifyEmailView(View):
 
         token_object.delete()
 
-        messages.success(request, 'Your email has been verified successfully! Your account is now active. You can now log in.')
+        messages.success(request, _('Your email has been verified successfully! Your account is now active. You can now log in.'))
 
         return redirect('accounts:login')
 
@@ -172,7 +172,7 @@ class ResendVerificationEmailView(View):
             send_verification_email(request, user)
 
 
-        messages.success(request, 'If an account with that email exists and is not verified, a verification email has been sent.')
+        messages.success(request, _('If an account with that email exists and is not verified, a verification email has been sent.'))
 
         return redirect('accounts:login')
 

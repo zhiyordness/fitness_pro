@@ -1,5 +1,8 @@
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.utils.translation import gettext_lazy as _
 
+from choices import FitnessGoalChoices
+from nutrition.services import NutritionService
 from nutrition.views import NutritionCalculator
 from datetime import date, datetime
 from django.http import HttpRequest, HttpResponse
@@ -16,54 +19,247 @@ class HomePageView(LoginRequiredMixin, View):
     template_name = 'home/home-page.html'
 
     def get_weight_change(self, user):
-        weight_records = ProgresTracking.objects.filter(owner=user)
+        weight_records = list(ProgresTracking.objects.filter(owner=user).order_by('-date')[:2])
 
-        if weight_records.count() >= 2:
-            last_weight = weight_records.first().weight
-            previous_weight = weight_records.last().weight
-            return abs(last_weight - previous_weight)
+        if len(weight_records) >= 2:
+            current_weight = weight_records[0].weight
+            previous_weight = weight_records[1].weight
+            return current_weight - previous_weight
         return 0
 
 
     def get(self, request, *args, **kwargs):
         today_name = date.today().strftime('%A')
-        training_days = TrainingDay.objects.filter(owner=request.user)
-        training_day = TrainingDay.objects.filter(day__iexact=today_name).first()
 
-        exercises = None
-        if training_day:
-            exercises = training_day.exercises.all().select_related('muscles')
+        training_day = TrainingDay.objects.filter(
+            owner=request.user,
+            day__iexact=today_name,
+        ).first()
 
-        now_time = datetime.now().time()
-
-        next_meal = Meal.objects.filter(
-            time__gte=now_time,
-            day__name__icontains=today_name,
-            day__owner=request.user,
-        ).first() or None
+        next_meal = NutritionService.get_next_planned_meal(
+            request.user,
+            today_name,
+        )
 
         if next_meal:
-            meal_items = next_meal.mealfooditem_set.select_related('food').all() if next_meal else []
             total_calories = NutritionCalculator.calculate_meal_totals(next_meal)['calories']
         else:
-            meal_items = []
             total_calories = 0
 
-        today_date = timezone.now()
-        weight_change = self.get_weight_change(request.user)
-        current_weight_record = ProgresTracking.objects.filter(owner=request.user).first()
+        meal_status = None
 
-        context = {
-            'training_days': training_days,
-            'training_day': training_day,
-            'exercises': exercises,
-            'next_meal': next_meal,
-            'meal_items': meal_items,
-            'today_date': today_date,
+        if next_meal:
+            meal_status = NutritionService.get_meal_status(
+                meal = next_meal,
+                user = request.user,
+            )
+
+        completed_nutrition = NutritionService.get_today_completed_nutrition_totals(
+            request.user
+        )
+
+        nutrition_target = getattr(
+            request.user,
+            'nutrition_target',
+            None,
+        )
+
+        nutrition_progress = {
+            'calories': 0,
+            'protein': 0,
+            'carbohydrates': 0,
+            'fat': 0,
+        }
+
+        if nutrition_target:
+
+            if nutrition_target.calories:
+                nutrition_progress['calories'] = round(
+                    min(
+                        100,
+                        (completed_nutrition['calories'] / nutrition_target.calories) * 100
+                    ),
+                    1
+                )
+
+            if nutrition_target.protein:
+                nutrition_progress['protein'] = round(
+                    min(
+                        100,
+                        (completed_nutrition['protein'] / nutrition_target.protein) * 100
+                    ),
+                    1
+                )
+
+            if nutrition_target.carbohydrates:
+                nutrition_progress['carbohydrates'] = round(
+                    min(
+                        100,
+                        (completed_nutrition['carbohydrates'] / nutrition_target.carbohydrates) * 100
+                    ),
+                    1
+                )
+
+            if nutrition_target.fat:
+                nutrition_progress['fat'] = round(
+                    min(
+                        100,
+                        (completed_nutrition['fat'] / nutrition_target.fat) * 100
+                    ),
+                    1
+                )
+
+        weekly_nutrition = NutritionService.get_weekly_nutrition_totals(
+            request.user
+        )
+
+        weekly_progress = {
+            'calories': 0,
+            'protein': 0,
+            'carbohydrates': 0,
+            'fat': 0,
+        }
+
+        if nutrition_target:
+
+            weekly_calories_target = nutrition_target.calories * 7
+            weekly_protein_target = nutrition_target.protein * 7
+            weekly_carbohydrates_target = nutrition_target.carbohydrates * 7
+            weekly_fat_target = nutrition_target.fat * 7
+
+            if weekly_calories_target:
+                weekly_progress['calories'] = round(
+                    min(
+                        100,
+                        (weekly_nutrition['calories'] / weekly_calories_target) * 100
+                    ),
+                    1
+                )
+
+            if weekly_protein_target:
+                weekly_progress['protein'] = round(
+                    min(
+                        100,
+                        (weekly_nutrition['protein'] / weekly_protein_target) * 100
+                    ),
+                    1
+                )
+
+            if weekly_carbohydrates_target:
+                weekly_progress['carbohydrates'] = round(
+                    min(
+                        100,
+                        (weekly_nutrition['carbohydrates'] / weekly_carbohydrates_target) * 100
+                    ),
+                    1
+                )
+
+            if weekly_fat_target:
+                weekly_progress['fat'] = round(
+                    min(
+                        100,
+                        (weekly_nutrition['fat'] / weekly_fat_target) * 100
+                    ),
+                    1
+                )
+
+        weekly_targets = {
+            'calories': nutrition_target.calories * 7,
+            'protein': nutrition_target.protein * 7,
+            'carbohydrates': nutrition_target.carbohydrates * 7,
+            'fat': nutrition_target.fat * 7,
+        }
+
+        meal_consistency = NutritionService.get_meal_consistency(
+            request.user
+        )
+
+        weight_change = self.get_weight_change(request.user)
+        current_weight_record = ProgresTracking.objects.filter(owner=request.user).order_by('-date').first()
+
+        profile = getattr(request.user, 'profile', None)
+
+        target_weight = profile.target_weight if profile else None
+
+        remaining_weight = None
+
+        if profile and current_weight_record and target_weight:
+
+            current_weight = current_weight_record.weight
+
+            if profile.fitness_goal == FitnessGoalChoices.LOSE_FAT:
+                remaining_weight = current_weight - target_weight
+
+            elif profile.fitness_goal == FitnessGoalChoices.BUILD_MUSCLE:
+                remaining_weight = target_weight - current_weight
+
+        goal_progress = None
+        if (
+            profile and profile.starting_weight and target_weight and current_weight_record
+        ):
+
+            start_weight = profile.starting_weight
+            current_weight = current_weight_record.weight
+
+            if profile.fitness_goal == FitnessGoalChoices.LOSE_FAT:
+                total = start_weight - target_weight
+                completed = start_weight - current_weight
+
+            elif profile.fitness_goal == FitnessGoalChoices.BUILD_MUSCLE:
+                total = target_weight - start_weight
+                completed = current_weight - start_weight
+
+            else: #Maintanin
+                total = 0
+                completed = 0
+
+            if total > 0:
+                goal_progress = round(
+                    max(0, min(100, (completed / total) * 100)), 1
+                )
+        # print(
+        #     f"Start: {profile.starting_weight}, "
+        #     f"Current: {current_weight_record.weight}, "
+        #     f"Target: {target_weight}, "
+        #     f"Goal: {profile.fitness_goal}, "
+        #     f"Progress: {goal_progress}"
+        # )
+
+        dashboard =  {
+            'current_weight': current_weight_record.weight if current_weight_record else None,
+            'target_weight': target_weight,
+            'remaining_weight': remaining_weight,
             'weight_change': weight_change,
-            'current_weight_record': current_weight_record,
+
+            'goal_progress': goal_progress,
+
+            'completed_nutrition': completed_nutrition,
+            'nutrition_target': nutrition_target,
+            'nutrition_progress': nutrition_progress,
+            'weekly_nutrition': weekly_nutrition,
+            'weekly_progress': weekly_progress,
+            'weekly_targets': weekly_targets,
+
+            'meal_consistency': meal_consistency,
+
+            'training_day': training_day,
+
+            'meal_status': meal_status,
+
+            'next_meal': next_meal,
             'total_calories': total_calories,
         }
+
+        context = {
+            'dashboard': dashboard,
+        }
+
+        # print(f"Meal Status: {meal_status}")
+        # print(completed_nutrition)
+        # print(nutrition_progress)
+        # print(weekly_nutrition)
+        # print(weekly_progress)
+        print(meal_consistency)
 
         return render(request, self.template_name, context)
 

@@ -49,3 +49,7 @@ class ExperienceLevelChoices(models.TextChoices):
     INTERMEDIATE = "Intermediate", "Intermediate"
     ADVANCED = "Advanced", "Advanced"
 
+class MealStatusChoices(models.TextChoices):
+    PLANNED = 'Planned', 'Planned'
+    COMPLETED = 'Completed', 'Completed'
+    MISSED = 'Missed', 'Missed'

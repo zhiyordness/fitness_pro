@@ -1,0 +1,211 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-16 16:23+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: accounts/admin.py:26
+msgid "Personal info"
+msgstr "Лична информация"
+
+#: accounts/admin.py:28
+msgid "Permissions"
+msgstr "Права"
+
+#: accounts/admin.py:40
+msgid "Important dates"
+msgstr "Важни дати"
+
+#: accounts/views.py:33
+msgid ""
+"Your account has been created successfully! Please check your email to "
+"verify your account."
+msgstr "Вашият акаунт беше създаден успешно! Моля, проверете имейла си, за да потвърдите профила си."
+
+#: accounts/views.py:36
+msgid "Registration failed due to email delivery issue. Please try again."
+msgstr "Регистрацията беше неуспешна поради проблем с изпращането на имейл. Моля, опитайте отново."
+
+#: accounts/views.py:41
+msgid ""
+"There was an error with your registration. Please correct the errors below "
+"and try again."
+msgstr "Възникна грешка при регистрацията. Моля, коригирайте посочените грешки и опитайте отново."
+
+#: accounts/views.py:70
+msgid "Your profile has been updated successfully!"
+msgstr "Вашият профил беше обновен успешно!"
+
+#: accounts/views.py:98
+msgid "Your profile has been deleted successfully!"
+msgstr "Вашият профил беше изтрит успешно!"
+
+#: accounts/views.py:136
+msgid "This verification link has expired. Please request a new one."
+msgstr "Този линк за потвърждение е изтекъл. Моля, заявете нов."
+
+#: accounts/views.py:142
+msgid "Your email is already verified. Please log in."
+msgstr "Вашият имейл вече е потвърден. Моля, влезте в профила си."
+
+#: accounts/views.py:151
+msgid ""
+"Your email has been verified successfully! Your account is now active. You "
+"can now log in."
+msgstr "Вашият имейл беше потвърден успешно! Акаунтът ви вече е активен. Можете да влезете в профила си."
+
+#: accounts/views.py:175
+msgid ""
+"If an account with that email exists and is not verified, a verification "
+"email has been sent."
+msgstr "Ако съществува акаунт с този имейл и той не е потвърден, е изпратен имейл за потвърждение."
+
+#: common/validators.py:33
+msgid ", "
+msgstr ", "
+
+#: common/validators.py:61
+msgid "Invalid image file"
+msgstr "Невалиден файл с изображение"
+
+#: nutrition/views.py:80
+msgid "The Meal has been created successfully!"
+msgstr "Храненето беше създадено успешно!"
+
+#: nutrition/views.py:96
+msgid "The meal has been updated successfully!"
+msgstr "Храненето беше обновено успешно!"
+
+#: nutrition/views.py:112
+msgid "The meal has been deleted successfully!"
+msgstr "Храненето беше изтрито успешно!"
+
+#: nutrition/views.py:134 nutrition/views.py:270
+msgid "The item has been created successfully!"
+msgstr "Артикулът беше създаден успешно!"
+
+#: nutrition/views.py:204
+msgid "The day has been created successfully!"
+msgstr "Денят беше създаден успешно!"
+
+#: nutrition/views.py:216
+msgid "The day has been deleted successfully!"
+msgstr "Денят беше изтрит успешно!"
+
+#: nutrition/views.py:233
+msgid "The day has been updated successfully!"
+msgstr "Денят беше обновен успешно!"
+
+#: nutrition/views.py:283
+msgid "The item has been deleted successfully!"
+msgstr "Артикулът беше изтрит успешно!"
+
+#: nutrition/views.py:297
+msgid "The item has been updated successfully!"
+msgstr "Артикулът беше обновен успешно!"
+
+#: progress/views.py:32
+msgid "Record has been created successfully!"
+msgstr "Записът беше създаден успешно!"
+
+#: progress/views.py:43
+msgid "Record has been updated successfully!"
+msgstr "Записът беше обновен успешно!"
+
+#: progress/views.py:77
+msgid "Record has been deleted successfully!"
+msgstr "Записът беше изтрит успешно!"
+
+#: templates/common/nav.html:15
+msgid "Libraries"
+msgstr "Библиотеки"
+
+#: templates/common/nav.html:20
+msgid "Food Database"
+msgstr "Хранителна база"
+
+#: templates/common/nav.html:25
+msgid "Exercise Library"
+msgstr "Библиотека с упражнения"
+
+#: templates/common/nav.html:34
+msgid "Training Days"
+msgstr "Тренировки"
+
+#: templates/common/nav.html:37
+msgid "Nutrition"
+msgstr "Хранене"
+
+#: templates/common/nav.html:40
+msgid "Progress"
+msgstr "Прогрес"
+
+#: templates/common/nav.html:91
+msgid "Profile"
+msgstr "Профил"
+
+#: templates/common/nav.html:100
+msgid "Logout"
+msgstr "Изход"
+
+#: templates/common/nav.html:109
+msgid "Admin"
+msgstr "Администрация"
+
+#: templates/common/nav.html:114
+msgid "Manage Foods"
+msgstr "Управление на храни"
+
+#: templates/common/nav.html:119
+msgid "Manage Exercises"
+msgstr "Управление на упражнения"
+
+#: templates/common/nav.html:125
+msgid "Django Admin"
+msgstr "Django Админ"
+
+#: templates/common/nav.html:134
+msgid "Login"
+msgstr "Вход"
+
+#: templates/common/nav.html:137
+msgid "Sign Up"
+msgstr "Регистрация"
+
+#: training/views.py:96
+msgid "The training day has been created successfully!"
+msgstr "Тренировъчният ден беше създаден успешно!"
+
+#: training/views.py:159
+msgid "The training day has been updated successfully!"
+msgstr "Тренировъчният ден беше обновен успешно!"
+
+#: training/views.py:178
+msgid "The training day has been deleted successfully!"
+msgstr "Тренировъчният ден беше изтрит успешно!"
+
+#: training/views.py:215
+msgid "Exercise has been created successfully!"
+msgstr "Упражнението беше създадено успешно!"
+
+#: training/views.py:225
+msgid "Exercise has been updated successfully!"
+msgstr "Упражнението беше обновено успешно!"
+
+#: training/views.py:238
+msgid "Exercise has been deleted successfully!"
+msgstr "Упражнението беше изтрито успешно!"

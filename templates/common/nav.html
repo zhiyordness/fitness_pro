@@ -1,4 +1,4 @@
-
+{% load i18n %}
 <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
     <div class="container">
         <a class="navbar-brand" href="{% url 'common:home' %}">Fitness Pro</a>
@@ -12,17 +12,17 @@
                 {% if not request.user.is_staff %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="librariesDropdown" role="button" data-bs-toggle="dropdown">
-                        Libraries
+                        {% trans "Libraries" %}
                     </a>
                     <ul class="dropdown-menu">
                         <li>
                             <a class="dropdown-item" href="{% url 'nutrition:food-database-list' %}">
-                                Food Database
+                                {% trans "Food Database" %}
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="{% url 'trainings:exercise-list' %}">
-                                Exercise Library
+                                {% trans "Exercise Library" %}
                             </a>
                         </li>
                     </ul>
@@ -31,15 +31,54 @@
 
                 {% if request.user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'trainings:list' %}">Training Days</a>
+                        <a class="nav-link" href="{% url 'trainings:list' %}">{% trans "Training Days" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'nutrition:nutrition-home' %}">Nutrition</a>
+                        <a class="nav-link" href="{% url 'nutrition:nutrition-home' %}">{% trans "Nutrition" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'progress:overview' %}">Progress</a>
+                        <a class="nav-link" href="{% url 'progress:overview' %}">{% trans "Progress" %}</a>
                     </li>
 
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            🌐
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                    <input name="language" type="hidden" value="en">
+                                    <button type="submit" class="dropdown-item">
+                                        🇬🇧 English
+                                    </button>
+                                </form>
+                            </li>
+
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                    <input name="language" type="hidden" value="bg">
+                                    <button type="submit" class="dropdown-item">
+                                        🇧🇬 Български
+                                    </button>
+                                </form>
+                            </li>
+
+                            <li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                    <input name="language" type="hidden" value="ru">
+                                    <button type="submit" class="dropdown-item">
+                                        🇷🇺 Русский
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
 
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
@@ -49,7 +88,7 @@
                             {% if request.user.is_authenticated and request.user.profile %}
                             <li>
                                 <a class="dropdown-item" href="{% url 'accounts:profile-details' request.user.profile.pk %}">
-                                    Profile
+                                    {% trans "Profile" %}
                                 </a>
                             </li>
                             {% endif %}
@@ -58,7 +97,7 @@
                             <li>
                                 <form method="post" action="{% url 'accounts:logout' %}" class="dropdown-item p-0">
                                     {% csrf_token %}
-                                    <button type="submit" class="dropdown-item">Logout</button>
+                                    <button type="submit" class="dropdown-item">{% trans "Logout" %}</button>
                                 </form>
                             </li>
                         </ul>
@@ -67,23 +106,23 @@
                     {% if request.user.is_staff %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                                Admin
+                                {% trans "Admin" %}
                             </a>
                             <ul class="dropdown-menu">
                                 <li>
                                     <a class="dropdown-item" href="{% url 'nutrition:food-database-list' %}">
-                                        Manage Foods
+                                        {% trans "Manage Foods" %}
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{% url 'trainings:exercise-list' %}">
-                                        Manage Exercises
+                                        {% trans "Manage Exercises" %}
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="/admin/" target="_blank">
-                                        Django Admin
+                                        {% trans "Django Admin" %}
                                     </a>
                                 </li>
                             </ul>
@@ -92,10 +131,10 @@
 
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:login' %}">Login</a>
+                        <a class="nav-link btn btn-outline-light text-nowrap me-1" href="{% url 'accounts:login' %}">{% trans "Login" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link btn btn-success text-white text-nowrap" href="{% url 'accounts:register' %}">Sign Up</a>
+                        <a class="nav-link btn btn-success text-white text-nowrap" href="{% url 'accounts:register' %}">{% trans "Sign Up" %}</a>
                     </li>
                 {% endif %}
             </ul>

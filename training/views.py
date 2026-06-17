@@ -9,7 +9,7 @@ from common.mixins import StaffRequiredMixin
 from training.forms import TrainingDayCreateForm, ExerciseCreateForm
 from training.models import TrainingDay, Exercise, MuscleGroup
 from training.services import TrainingDayService
-
+from django.utils.translation import gettext_lazy as _
 
 
 
@@ -93,7 +93,7 @@ class TrainingDayCreateView(LoginRequiredMixin, CreateView):
             if exercise_id_list:
                 self.object.exercises.set(exercise_id_list)
 
-        messages.success(self.request, 'The training day has been created successfully!')
+        messages.success(self.request, _('The training day has been created successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -156,7 +156,7 @@ class TrainingDayEditView(LoginRequiredMixin, UpdateView):
         else:
             self.object.exercises.clear()
 
-        messages.success(self.request, f'The training day has been updated successfully!')
+        messages.success(self.request, _('The training day has been updated successfully!'))
         return response
 
     def get_success_url(self):
@@ -175,7 +175,7 @@ class TrainingDayDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'training/training_day/training-day-delete.html'
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'Split has been deleted successfully!')
+        messages.success(self.request, _('Split has been deleted successfully!'))
         return super().delete(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -212,7 +212,7 @@ class ExerciseCreateView(StaffRequiredMixin, CreateView):
     success_url = reverse_lazy('trainings:list')
 
     def form_valid(self, form):
-        messages.success(self.request, 'Exercise has been created successfully!')
+        messages.success(self.request, _('Exercise has been created successfully!'))
         return super().form_valid(form)
 
 
@@ -222,7 +222,7 @@ class ExerciseEditView(StaffRequiredMixin, UpdateView):
     template_name = 'training/exercise/exercise_edit.html'
 
     def form_valid(self, form):
-        messages.success(self.request, 'Exercise has been updated successfully!')
+        messages.success(self.request, _('Exercise has been updated successfully!'))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -235,7 +235,7 @@ class ExerciseDeleteView(StaffRequiredMixin, DeleteView):
     template_name = 'training/exercise/exercise-delete.html'
 
     def delete(self, form, *args, **kwargs):
-        messages.success(self.request, 'Exercise has been deleted successfully!')
+        messages.success(self.request, _('Exercise has been deleted successfully!'))
         return super().delete(form, *args, **kwargs)
 
 

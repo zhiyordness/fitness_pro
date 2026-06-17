@@ -23,6 +23,7 @@ from  django.conf import settings
 from common.views import page_not_found_view
 
 urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),
     path('admin/', admin.site.urls),
     path('', include('common.urls')),
     path('nutrition/', include('nutrition.urls')),
