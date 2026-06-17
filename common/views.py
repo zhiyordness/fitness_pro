@@ -162,12 +162,11 @@ class HomePageView(LoginRequiredMixin, View):
                     ),
                     1
                 )
-
         weekly_targets = {
-            'calories': nutrition_target.calories * 7,
-            'protein': nutrition_target.protein * 7,
-            'carbohydrates': nutrition_target.carbohydrates * 7,
-            'fat': nutrition_target.fat * 7,
+            'calories': nutrition_target.calories * 7 if nutrition_target else 0,
+            'protein': nutrition_target.protein * 7 if nutrition_target else 0,
+            'carbohydrates': nutrition_target.carbohydrates * 7 if nutrition_target else 0,
+            'fat': nutrition_target.fat * 7 if nutrition_target else 0,
         }
 
         meal_consistency = NutritionService.get_meal_consistency(
