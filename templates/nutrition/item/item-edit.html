@@ -1,0 +1,27 @@
+{% extends 'common/base.html' %}
+
+{% block title %}Edit Food Item{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Edit Food Item</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success">Edit Item</button>
+                            <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

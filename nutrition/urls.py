@@ -6,6 +6,7 @@ app_name = "nutrition"
 
 urlpatterns = [
     path('nutrition/', views.NutritionHomeView.as_view(), name='nutrition-home'),
+    path('targets/edit/', views.NutritionTargetUpdateView.as_view(), name='nutrition-target-edit',),
 
     path('food-database/', include([
         path('list/', views.FoodDatabaseListView.as_view(), name='food-database-list'),
@@ -21,6 +22,7 @@ urlpatterns = [
             path('<int:meal_pk>/missed/', views.MealMissedView.as_view(), name='meal-missed'),
             path('<int:meal_pk>/planned/', views.MealPlannedView.as_view(), name='meal-planned'),
             path('<int:meal_pk>/item/<int:pk>/delete/', views.ItemDeleteView.as_view(), name='item-delete'),
+            path('<int:meal_pk>/item/<int:pk>/edit/', views.ItemEditView.as_view(), name='item-edit',),
             path('<int:pk>/', include([
                 path('add-item/', views.ItemAddView.as_view(), name='item-add'),
                 path('details/', views.MealDetailsView.as_view(), name='meal-details'),

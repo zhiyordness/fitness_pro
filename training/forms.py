@@ -2,11 +2,28 @@
 
 from django import forms
 
-
-from training.models import TrainingDay, Exercise
+from choices import WeekDaysChoices
+from training.models import TrainingDay, Exercise, TrainingDayExercise
 
 
 class TrainingDayCreateForm(forms.ModelForm):
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if user:
+            used_days = TrainingDay.objects.filter(
+                owner=user
+            ).values_list(
+                'day',
+                flat=True,
+            )
+
+            self.fields['day'].choices = [
+                choice
+                for choice in WeekDaysChoices.choices
+                if choice[0] not in used_days
+            ]
 
     class Meta:
         model = TrainingDay
@@ -78,4 +95,35 @@ class ExerciseCreateForm(forms.ModelForm):
                 'required': 'Please enter the number of repetitions.',
                 'min_value': 'Number of repetitions must be at least 1.',
             },
+        }
+
+
+
+class TrainingDayExerciseForm(forms.ModelForm):
+
+    class Meta:
+        model = TrainingDayExercise
+        fields = [
+            'custom_sets',
+            'custom_repetitions',
+        ]
+
+        widgets = {
+            'custom_sets': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': 1,
+                }
+            ),
+            'custom_repetitions': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': 1,
+                }
+            ),
+        }
+
+        labels = {
+            'custom_sets': 'Sets',
+            'custom_repetitions': 'Repetitions',
         }

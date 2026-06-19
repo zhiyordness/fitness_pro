@@ -56,12 +56,28 @@ class TrainingDayService:
     def build_exercises_by_muscle(training_day):
         exercises_by_muscle = {}
 
-        for exercise in training_day.exercises.all():
+        for training_day_exercise in (
+                training_day.training_day_exercises.all()
+        ):
+            exercise = training_day_exercise.exercise
+
             for muscle in exercise.muscles.all():
 
                 if muscle.name not in exercises_by_muscle:
                     exercises_by_muscle[muscle.name] = []
 
-                exercises_by_muscle[muscle.name].append(exercise)
+                exercises_by_muscle[muscle.name].append(
+                    training_day_exercise
+                )
 
         return exercises_by_muscle
+
+    @staticmethod
+    def swap_exercise_order(current_exercise, target_exercise,):
+        current_order = current_exercise.order
+
+        current_exercise.order = target_exercise.order
+        target_exercise.order = current_order
+
+        current_exercise.save()
+        target_exercise.save()

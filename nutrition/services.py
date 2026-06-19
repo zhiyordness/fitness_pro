@@ -50,6 +50,27 @@ class NutritionCalculator:
 
         return totals
 
+    @staticmethod
+    def calculate_item_totals(item):
+        totals = {
+            'calories': Decimal('0'),
+            'protein': Decimal('0'),
+            'carbohydrates': Decimal('0'),
+            'fat': Decimal('0'),
+        }
+
+        if item.measure == 'Gr.':
+            item_quantity = item.quantity / Decimal('100')
+        else:
+            item_quantity = item.quantity
+
+        totals['calories'] = item.food.calories * item_quantity
+        totals['protein'] = item.food.protein * item_quantity
+        totals['carbohydrates'] = item.food.carbohydrates * item_quantity
+        totals['fat'] = item.food.fat * item_quantity
+
+        return totals
+
 
 class NutritionService:
 
@@ -230,3 +251,46 @@ class NutritionService:
                 return meal
 
         return None
+
+    @staticmethod
+    def get_nutrition_progress(user):
+        completed = NutritionService.get_today_completed_nutrition_totals(
+            user
+        )
+
+        target = getattr(
+            user,
+            'nutrition_target',
+            None,
+        )
+
+        if not target:
+            return None
+
+        progress = {}
+
+        progress['calories'] = round(
+            min(100, completed['calories'] / target.calories * 100),
+            1,
+        ) if target.calories else 0
+
+        progress['protein'] = round(
+            min(100, completed['protein'] / target.protein * 100),
+            1,
+        ) if target.protein else 0
+
+        progress['carbohydrates'] = round(
+            min(100, completed['carbohydrates'] / target.carbohydrates * 100),
+            1,
+        ) if target.carbohydrates else 0
+
+        progress['fat'] = round(
+            min(100, completed['fat'] / target.fat * 100),
+            1,
+        ) if target.fat else 0
+
+        return {
+            'completed': completed,
+            'target': target,
+            'progress': progress,
+        }

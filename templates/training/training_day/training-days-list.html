@@ -1,46 +1,164 @@
 {% extends 'common/base.html' %}
 
-{% block title %}Training Splits{% endblock %}
+{% block title %}Training Overview{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">All Training Days</h4>
-                    <a href="{% url 'trainings:training-day-create' %}" class="btn btn-success btn-sm">Add training day</a>
-                </div>
-                <div class="card-body bg-success">
-                    {% if training_splits %}
-                        <div class="list-group">
-                            {% for split in training_splits %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center mb-2">
-                                    <div>
-                                        <h5>{{ split.day }}</h5>
-                                        {% if split.muscle_groups.all %}
-                                            <small class="text-muted">
-                                                Muscle Groups:
-                                                {% for group in split.muscle_groups.all %}
-                                                    {{ group }}{% if not forloop.last %}, {% endif %}
-                                                {% endfor %}
-                                            </small>
-                                        {% else %}
-                                            <small class="text-muted">No specific muscle groups assigned.</small>
-                                        {% endif %}
-                                    </div>
-                                    <div class="btn-group" role="group" aria-label="Split Actions">
-                                        <a href="{% url 'trainings:details' split.pk %}" class="btn btn-warning btn-sm">Details</a>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-center">No training days defined yet. Start by creating one!</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="card bg-dark text-white text-center py-2 px-4 mb-0">
+            Training Overview
+        </h1>
+
+        <a href="{% url 'trainings:training-day-create' %}"
+           class="btn btn-success">
+            Add Training Day
+        </a>
     </div>
+
+    {% if training_splits %}
+
+        <ul class="nav nav-tabs mb-4 justify-content-center">
+            {% for split in training_splits %}
+                <li class="nav-item">
+                    <a
+                        class="nav-link {% if split.day == active_day %}active{% endif %}"
+                        data-bs-toggle="tab"
+                        href="#day-{{ split.pk }}"
+                    >
+                        {{ split.day }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content">
+
+            {% for split in training_splits %}
+
+                <div
+                    class="tab-pane fade {% if split.day == active_day %}show active{% endif %}"
+                    id="day-{{ split.pk }}"
+                >
+
+                    <div class="card shadow-sm bg-success">
+
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">
+                                {{ split.day }}
+                            </h3>
+
+                            <a href="{% url 'trainings:details' split.pk %}"
+                               class="btn btn-warning btn-sm">
+                                Details
+                            </a>
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="mb-4">
+                                <strong>Description:</strong>
+                                <br>
+                                <span class="badge bg-warning text-dark mt-2">
+                                    {{ split.description }}
+                                </span>
+                            </div>
+
+                            <hr>
+
+                            <div class="mb-4">
+                                <strong>Muscle Groups:</strong>
+                                <br>
+
+                                {% if split.muscle_groups.all %}
+                                    {% for group in split.muscle_groups.all %}
+                                        <span class="badge bg-dark me-1 mt-2">
+                                            {{ group.name }}
+                                        </span>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted mt-2">
+                                        No muscle groups assigned.
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                            <hr>
+
+                            <div>
+                                <strong>Exercises:</strong>
+
+                                {% if split.training_day_exercises.all %}
+                                    <div class="list-group mt-3">
+
+                                        {% for item in split.training_day_exercises.all %}
+
+                                            <div class="list-group-item">
+
+                                                <div class="d-flex justify-content-between align-items-center">
+
+                                                    <div>
+                                                        <strong>
+                                                            {{ item.exercise.name }}
+                                                        </strong>
+
+                                                        <br>
+
+                                                        <small class="text-muted">
+                                                            {{ item.custom_sets }}
+                                                            sets ×
+                                                            {{ item.custom_repetitions }}
+                                                            reps
+                                                        </small>
+                                                    </div>
+
+                                                    <a href="{% url 'trainings:exercise-details' item.exercise.pk %}"
+                                                       class="btn btn-outline-warning btn-sm">
+                                                        View
+                                                    </a>
+
+                                                </div>
+
+                                            </div>
+
+                                        {% endfor %}
+
+                                    </div>
+
+                                {% else %}
+
+                                    <p class="text-muted mt-2">
+                                        No exercises assigned.
+                                    </p>
+
+                                {% endif %}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="alert alert-info text-center">
+            No training days defined yet.
+        </div>
+
+        <div class="text-center">
+            <a href="{% url 'trainings:training-day-create' %}"
+               class="btn btn-success">
+                Create Your First Training Day
+            </a>
+        </div>
+
+    {% endif %}
+
 </div>
 {% endblock %}
+

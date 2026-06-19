@@ -22,11 +22,23 @@
                 <p class="card-text"><strong>Experience Level:</strong> {{ object.experience_level|default:"N/A" }}</p>
                 <p class="card-text"><strong>Bio:</strong> {{ object.bio|default:"N/A" }}</p>
 
+                <h5 class="mt-4">Nutrition Goals</h5>
+                    {% if nutrition_target %}
+                        <p><strong>Calories:</strong> {{ nutrition_target.calories }}</p>
+                        <p><strong>Protein:</strong> {{ nutrition_target.protein }} g</p>
+                        <p><strong>Carbohydrates:</strong> {{ nutrition_target.carbohydrates }} g</p>
+                        <p><strong>Fat:</strong> {{ nutrition_target.fat }} g</p>
+                    {% else %}
+                        <p>No nutrition goals configured.</p>
+                    {% endif %}
+
                 <div class="mt-3">
                     <a href="{% url 'accounts:profile-edit' request.user.profile.pk %}" class="btn btn-primary">Edit Profile</a>
+                     <a href="{% url 'nutrition:nutrition-target-edit' %}" class="btn btn-success">Edit Nutrition Goals</a>
                     <a href="{% url 'accounts:password_change' %}" class="btn btn-primary">Password Change</a>
                     <a href="{% url 'accounts:profile-delete' request.user.profile.pk %}" class="btn btn-danger">Delete Profile</a>
                 </div>
+
             </div>
         </div>
     </div>

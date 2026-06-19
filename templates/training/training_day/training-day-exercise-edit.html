@@ -1,0 +1,43 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="card">
+
+        <div class="card-header bg-dark text-white">
+            <h3>
+                {{ training_day_exercise.exercise.name }}
+            </h3>
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+
+                {% csrf_token %}
+
+                {{ form.as_p }}
+
+                <button
+                    type="submit"
+                    class="btn btn-success"
+                >
+                    Save
+                </button>
+
+                <a href="{% url 'trainings:details' training_day_exercise.training_day.pk %}"
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

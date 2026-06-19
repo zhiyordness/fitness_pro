@@ -1,7 +1,7 @@
 from django.forms import ModelForm
-
+from django import forms
 from choices import WeekDaysChoices
-from nutrition.models import Meal, FoodDatabase, MealFoodItem, NutritionDay
+from nutrition.models import Meal, FoodDatabase, MealFoodItem, NutritionDay, NutritionTarget
 
 
 class MealForm(ModelForm):
@@ -77,4 +77,12 @@ class DayCreateForm(ModelForm):
             ]
 
 
-
+class NutritionTargetForm(forms.ModelForm):
+    class Meta:
+        model = NutritionTarget
+        fields = (
+            'calories',
+            'protein',
+            'carbohydrates',
+            'fat',
+        )

@@ -142,7 +142,7 @@
 
                     <p>
                         <strong>
-                            {{ dashboard.training_day.exercises.count }}
+                            {{ dashboard.training_day.training_day_exercises.count }}
                         </strong>
                         {% trans "Exercises" %}
                     </p>
@@ -360,6 +360,90 @@
 
         </div>
     </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm h-100">
+
+            <div class="card-header">
+                <h5 class="mb-0">
+                    📊 {% trans "Today's Nutrition Progress" %}
+                </h5>
+            </div>
+
+            <div class="card-body">
+
+                <p>
+                    <strong>Calories:</strong>
+                    {{ dashboard.daily_nutrition_progress.completed.calories|floatformat:0 }}
+                    /
+                    {{ dashboard.daily_nutrition_progress.target.calories }}
+                </p>
+
+                <div class="progress mb-3">
+                    <div
+                        class="progress-bar"
+                        role="progressbar"
+                        style="width: {{ dashboard.daily_nutrition_progress.progress.calories }}%"
+                    >
+                        {{ dashboard.daily_nutrition_progress.progress.calories }}%
+                    </div>
+                </div>
+
+                <p>
+                    <strong>Protein:</strong>
+                    {{ dashboard.daily_nutrition_progress.completed.protein|floatformat:1 }}g
+                    /
+                    {{ dashboard.daily_nutrition_progress.target.protein|floatformat:1 }}g
+                </p>
+
+                <div class="progress mb-3">
+                    <div
+                        class="progress-bar bg-success"
+                        role="progressbar"
+                        style="width: {{ dashboard.daily_nutrition_progress.progress.protein }}%"
+                    >
+                        {{ dashboard.daily_nutrition_progress.progress.protein }}%
+                    </div>
+                </div>
+
+                <p>
+                    <strong>Carbs:</strong>
+                    {{ dashboard.daily_nutrition_progress.completed.carbohydrates|floatformat:1 }}g
+                    /
+                    {{ dashboard.daily_nutrition_progress.target.carbohydrates|floatformat:1 }}g
+                </p>
+
+                <div class="progress mb-3">
+                    <div
+                        class="progress-bar bg-info"
+                        role="progressbar"
+                        style="width: {{ dashboard.daily_nutrition_progress.progress.carbohydrates }}%"
+                    >
+                        {{ dashboard.daily_nutrition_progress.progress.carbohydrates }}%
+                    </div>
+                </div>
+
+                <p>
+                    <strong>Fat:</strong>
+                    {{ dashboard.daily_nutrition_progress.completed.fat|floatformat:1 }}g
+                    /
+                    {{ dashboard.daily_nutrition_progress.target.fat|floatformat:1 }}g
+                </p>
+
+                <div class="progress mb-3">
+                    <div
+                        class="progress-bar bg-warning"
+                        role="progressbar"
+                        style="width: {{ dashboard.daily_nutrition_progress.progress.fat }}%"
+                    >
+                        {{ dashboard.daily_nutrition_progress.progress.fat }}%
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <div class="col-12 col-lg-6">
         <div class="card shadow-sm h-100">
 

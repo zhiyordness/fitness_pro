@@ -9,6 +9,10 @@ urlpatterns = [
         path('list/', views.TrainingDayListView.as_view(), name='list'),
         path('training_day/', include([
             path('training_day-create/', views.TrainingDayCreateView.as_view(), name='training-day-create'),
+            path('training_day_exercise/<int:pk>/edit/', views.TrainingDayExerciseEditView.as_view(), name='training-day-exercise-edit'),
+            path('day-exercise/<int:pk>/move-up/', views.TrainingDayExerciseMoveUpView.as_view(), name='training-day-exercise-move-up'),
+
+            path('day-exercise/<int:pk>/move-down/', views.TrainingDayExerciseMoveDownView.as_view(), name='training-day-exercise-move-down'),
             path('<int:pk>/', include([
                 path('details/', views.TrainingDayDetailsView.as_view(), name='details'),
                 path('training_day-edit/', views.TrainingDayEditView.as_view(), name='training-day-edit'),

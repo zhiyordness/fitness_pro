@@ -31,21 +31,6 @@
                         </div>
 
                         <div class="mb-4">
-                            <h6><strong>Select Muscle Groups:</strong></h6>
-                            <select name="muscle_groups" multiple class="form-control" size="5" id="muscleGroupsSelect">
-                                {% for group in muscle_groups %}
-                                    <option value="{{ group.id }}"
-                                        {% if group.id in selected_muscle_groups %}selected{% endif %}>
-                                        {{ group.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <small class="form-text text-muted">
-                                Select the muscle groups that will be trained in this split. Hold Ctrl/Cmd to select multiple.
-                            </small>
-                        </div>
-
-                        <div class="mb-4">
                             <h6><strong>Select Exercises:</strong></h6>
                             <div class="row mb-3">
                                 <div class="col-md-4">
@@ -332,10 +317,5 @@ function clearAllExercises() {
     }
 }
 
-// Optional: Sync muscle groups selection with available exercises
-document.getElementById('muscleGroupsSelect').addEventListener('change', function() {
-    // You could add logic here to filter available exercises based on selected muscle groups
-    console.log('Selected muscle groups:', Array.from(this.selectedOptions).map(opt => opt.value));
-});
 </script>
 {% endblock %}

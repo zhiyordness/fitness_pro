@@ -173,6 +173,8 @@ class HomePageView(LoginRequiredMixin, View):
             request.user
         )
 
+        daily_nutrition_progress = NutritionService.get_nutrition_progress(request.user)
+
         weight_change = self.get_weight_change(request.user)
         current_weight_record = ProgresTracking.objects.filter(owner=request.user).order_by('-date').first()
 
@@ -238,6 +240,8 @@ class HomePageView(LoginRequiredMixin, View):
             'weekly_nutrition': weekly_nutrition,
             'weekly_progress': weekly_progress,
             'weekly_targets': weekly_targets,
+
+            'daily_nutrition_progress': daily_nutrition_progress,
 
             'meal_consistency': meal_consistency,
 

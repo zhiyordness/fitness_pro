@@ -3,20 +3,22 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import When, Case, IntegerField
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView, ListView
 from choices import WeekDaysChoices, MealStatusChoices
 from common.mixins import StaffRequiredMixin
-from nutrition.forms import MealForm, MealFoodItemForm, DayCreateForm
-from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase, MealCompletion
+from nutrition.forms import MealForm, MealFoodItemForm, DayCreateForm, NutritionTargetForm
+from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase, MealCompletion, NutritionTarget
 from nutrition.services import NutritionCalculator, NutritionService
 from django.utils.translation import gettext_lazy as _
+from datetime import datetime
+
 
 class NutritionHomeView(LoginRequiredMixin, ListView):
     model = NutritionDay
     template_name = 'nutrition/nutrition-overview.html'
     context_object_name = 'days'
-    paginate_by = 1
 
     def get_queryset(self):
         order_days = [
@@ -54,7 +56,10 @@ class NutritionHomeView(LoginRequiredMixin, ListView):
             day_totals[day.pk] = NutritionCalculator.calculate_day_totals(day)
             day.ordered_meals = ordered_meals
 
+        today_name = timezone.now().strftime('%A')
+
         context['day_totals'] = day_totals
+        context['today_name'] = today_name
 
         return context
 
@@ -149,6 +154,32 @@ class ItemAddView(LoginRequiredMixin, CreateView):
         return context
 
 
+class ItemEditView(LoginRequiredMixin, UpdateView):
+    model = MealFoodItem
+    form_class = MealFoodItemForm
+    template_name = 'nutrition/item/item-edit.html'
+
+    def get_queryset(self):
+        return MealFoodItem.objects.filter(
+            meal__day__owner=self.request.user,
+        )
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            _('The item has been updated successfully!')
+        )
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy(
+            'nutrition:day-details',
+            kwargs={
+                'pk': self.object.meal.day.pk,
+            }
+        )
+
 class ItemDeleteView(LoginRequiredMixin, DeleteView):
     model = MealFoodItem
     template_name = 'nutrition/item/item-delete.html'
@@ -177,15 +208,27 @@ class DayDetailsView(LoginRequiredMixin, DetailView):
             'meals__mealfooditem_set__food',
         )
 
-
-    def get_context_data(self,**kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         day = self.object
 
         ordered_meals = day.meals.all().order_by('order')
 
         for meal in ordered_meals:
             meal.totals = NutritionCalculator.calculate_meal_totals(meal)
+
+            items = list(meal.mealfooditem_set.all())
+
+            for item in items:
+                totals = NutritionCalculator.calculate_item_totals(item)
+
+                item.total_calories = totals['calories']
+                item.total_protein = totals['protein']
+                item.total_carbohydrates = totals['carbohydrates']
+                item.total_fat = totals['fat']
+
+            meal.items = items
 
         day.totals = NutritionCalculator.calculate_day_totals(day)
         day.ordered_meals = ordered_meals
@@ -379,3 +422,35 @@ class MealPlannedView(LoginRequiredMixin, View):
         )
 
         return redirect('nutrition:nutrition-home')
+
+
+class NutritionTargetUpdateView(LoginRequiredMixin, UpdateView,):
+    model = NutritionTarget
+    form_class = NutritionTargetForm
+    template_name = 'nutrition/target-edit.html'
+
+    def get_object(self, queryset=None):
+        nutrition_target, _ = NutritionTarget.objects.get_or_create(
+            user=self.request.user,
+            defaults={
+                'calories': 2000,
+                'protein': 150,
+                'carbohydrates': 250,
+                'fat': 60,
+            }
+        )
+
+        return nutrition_target
+
+    def get_success_url(self):
+        return reverse_lazy(
+            'nutrition:nutrition-target-edit'
+        )
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            _('Nutrition goals updated successfully!')
+        )
+
+        return super().form_valid(form)

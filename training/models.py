@@ -68,17 +68,12 @@ class TrainingDay(models.Model):
         'MuscleGroup',
         related_name='training_days',
     )
-    exercises = models.ManyToManyField(
-        'Exercise',
-        related_name= 'training_days',
-        blank=True
-    )
 
     def get_absolute_url(self):
         return reverse('training:details', kwargs={'pk': self.pk})
 
     def __str__(self):
-        return f"{self.get_day_display()} - {self.owner.username} - {self.description}"
+        return f"{self.get_day_display()} - {self.owner.email} - {self.description}"
 
     class Meta:
         ordering = ['owner', 'day']
@@ -93,3 +88,32 @@ class TrainingDay(models.Model):
         super().save(*args, **kwargs)
 
 
+class TrainingDayExercise(models.Model):
+
+    training_day = models.ForeignKey(
+        TrainingDay,
+        on_delete=models.CASCADE,
+        related_name='training_day_exercises',
+    )
+
+    exercise = models.ForeignKey(
+        Exercise,
+        on_delete=models.CASCADE,
+        related_name='training_day_exercises',
+    )
+
+    custom_sets = models.PositiveSmallIntegerField()
+
+    custom_repetitions = models.PositiveSmallIntegerField()
+
+    order = models.PositiveSmallIntegerField(
+        default=1,
+    )
+
+    class Meta:
+        ordering = ['order']
+
+        unique_together = (
+            'training_day',
+            'exercise',
+        )

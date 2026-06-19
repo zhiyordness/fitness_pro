@@ -55,17 +55,18 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {% for item in meal.mealfooditem_set.all %}
+                                            {% for item in meal.items %}
                                             <tr>
                                                 <td><strong>{{ item.food.name }}</strong>
-                                                <a href="{% url 'nutrition:item-delete' meal.pk item.pk %}" class="btn btn-sm btn-danger">Remove</a>
+                                                    <a href="{% url 'nutrition:item-delete' meal.pk item.pk %}" class="btn btn-sm btn-danger">Remove</a>
+                                                    <a href="{% url 'nutrition:item-edit' meal.pk item.pk %}" class="btn btn-warning btn-sm">Edit</a>
                                                 </td>
                                                 <td>{{ item.quantity|floatformat:2 }}</td>
                                                 <td>{{ item.measure }}</td>
-                                                <td>{{ item.food.calories|floatformat:2 }}</td>
-                                                <td>{{ item.food.protein|floatformat:2 }}g</td>
-                                                <td>{{ item.food.carbohydrates|floatformat:2 }}g</td>
-                                                <td>{{ item.food.fat|floatformat:2 }}g</td>
+                                              <td>{{ item.total_calories|floatformat:2 }}</td>
+                                              <td>{{ item.total_protein|floatformat:2 }}g</td>
+                                              <td>{{ item.total_carbohydrates|floatformat:2 }}g</td>
+                                              <td>{{ item.total_fat|floatformat:2 }}g</td>
                                             </tr>
 
                                             {% endfor %}

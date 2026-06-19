@@ -14,6 +14,9 @@ from accounts.email_verif import send_verification_email
 from accounts.forms import FitnessProUserCreationForm, ProfileForm, UserDeleteForm
 from accounts.models import Profile, EmailVerificationToken, FitnessProUser
 import logging
+
+from nutrition.services import NutritionService
+
 # Create your views here.
 
 UserModel = get_user_model()
@@ -50,6 +53,17 @@ class ProfileDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset = None):
         return self.request.user.profile
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['nutrition_target'] = getattr(
+            self.request.user,
+            'nutrition_target',
+            None,
+        )
+
+        return context
 
     def get_success_url(self):
         return reverse_lazy('accounts:profile-details', kwargs={'pk': self.object.pk})
