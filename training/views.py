@@ -6,11 +6,11 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import DeleteView, DetailView, CreateView, ListView, UpdateView
-from choices import WeekDaysChoices
+from choices import WeekDaysChoices, WorkoutSessionStatus
 from common.mixins import StaffRequiredMixin
-from training.forms import TrainingDayCreateForm, ExerciseCreateForm, TrainingDayExerciseForm
-from training.models import TrainingDay, Exercise, MuscleGroup, TrainingDayExercise
-from training.services import TrainingDayService
+from training.forms import TrainingDayCreateForm, ExerciseCreateForm, TrainingDayExerciseForm, WorkoutSetEditForm
+from training.models import TrainingDay, Exercise, MuscleGroup, TrainingDayExercise, WorkoutSession, WorkoutSet
+from training.services import TrainingDayService, WorkoutSessionService, WorkoutStatisticsService, PersonalRecordService
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -54,6 +54,22 @@ class TrainingDayListView(LoginRequiredMixin, ListView):
         today_name = timezone.now().strftime('%A')
 
         training_splits = context['training_splits']
+
+        active_workout_days = set(
+            WorkoutSession.objects.filter(
+                owner=self.request.user,
+                status=WorkoutSessionStatus.STARTED,
+            )
+            .values_list(
+                'training_day_id',
+                flat=True,
+            )
+        )
+
+        for split in training_splits:
+            split.has_active_workout = (
+                    split.pk in active_workout_days
+            )
 
         active_day = None
 
@@ -103,6 +119,15 @@ class TrainingDayDetailsView(LoginRequiredMixin, DetailView):
             ).prefetch_related(
                 'exercise__muscles'
             ).order_by('order')
+        )
+
+        context['has_active_workout'] = (
+                WorkoutSessionService
+                .get_active_workout_session(
+                    user=self.request.user,
+                    training_day=training_day,
+                )
+                is not None
         )
 
         context['exercises_by_muscle'] = (
@@ -451,3 +476,277 @@ class TrainingDayExerciseMoveDownView(LoginRequiredMixin, View,):
             )
 
         return redirect('trainings:details', pk=exercise.training_day.pk,)
+
+
+class WorkoutStartView(LoginRequiredMixin, View):
+
+    def post(
+            self,
+            request,
+            pk,
+            *args,
+            **kwargs,
+    ):
+        training_day = get_object_or_404(
+            TrainingDay,
+            pk=pk,
+            owner=request.user,
+        )
+
+        workout_session = (
+            WorkoutSessionService.start_workout(
+                user=request.user,
+                training_day=training_day,
+            )
+        )
+
+        return redirect(
+            'trainings:workout-session-details',
+            pk=workout_session.pk,
+        )
+
+
+
+class WorkoutSessionDetailsView(LoginRequiredMixin, DetailView):
+    model = WorkoutSession
+
+    template_name = (
+        'training/workout_session/workout-session-details.html'
+    )
+
+    context_object_name = 'workout_session'
+
+    def get_queryset(self):
+        return (
+            WorkoutSession.objects.filter(
+                owner=self.request.user,
+            )
+            .select_related(
+                'training_day',
+            )
+            .prefetch_related(
+                'exercise_sessions__training_day_exercise__exercise',
+                'exercise_sessions__sets',
+            )
+        )
+
+
+class WorkoutSetCompleteView(LoginRequiredMixin, View):
+
+    def post(
+            self,
+            request,
+            pk,
+            *args,
+            **kwargs,
+    ):
+        workout_set = get_object_or_404(
+            WorkoutSet.objects.select_related(
+                'exercise_session__workout_session',
+                'exercise_session__training_day_exercise__exercise'
+            ),
+            pk=pk,
+            exercise_session__workout_session__owner=request.user,
+        )
+
+        workout_set.is_completed = True
+        workout_set.save(
+            update_fields=['is_completed']
+        )
+
+        PersonalRecordService.update_personal_record(
+            workout_set
+        )
+
+        WorkoutSessionService.check_and_finish_workout(
+            workout_set
+            .exercise_session
+            .workout_session
+        )
+
+        return redirect(
+            'trainings:workout-session-details',
+            pk=(
+                workout_set
+                .exercise_session
+                .workout_session
+                .pk
+            ),
+        )
+
+
+class WorkoutSetEditView(LoginRequiredMixin, UpdateView):
+    model = WorkoutSet
+
+    form_class = WorkoutSetEditForm
+
+    template_name = (
+        'training/workout_session/workout-set-edit.html'
+    )
+
+    def get_queryset(self):
+        return WorkoutSet.objects.filter(
+            exercise_session__workout_session__owner=
+            self.request.user
+        )
+
+    def get_success_url(self):
+        return reverse_lazy(
+            'trainings:workout-session-details',
+            kwargs={
+                'pk': (
+                    self.object
+                    .exercise_session
+                    .workout_session
+                    .pk
+                )
+            }
+        )
+
+
+class WorkoutSessionFinishView(LoginRequiredMixin, View):
+
+    def post(
+            self,
+            request,
+            pk,
+            *args,
+            **kwargs,
+    ):
+        workout_session = get_object_or_404(
+            WorkoutSession,
+            pk=pk,
+            owner=request.user,
+        )
+
+        has_completed_sets = (
+            WorkoutSessionService.has_completed_sets(
+                workout_session
+            )
+        )
+
+        if not has_completed_sets:
+            messages.warning(
+                request,
+                (
+                    'You have not completed any sets. '
+                    'Please complete at least one set '
+                    'or cancel the workout.'
+                )
+            )
+            return redirect(
+                'trainings:workout-session-details',
+                pk=workout_session.pk,
+            )
+
+        workout_session.status = (
+            WorkoutSessionStatus.COMPLETED
+        )
+
+        workout_session.finished_at = (
+            timezone.now()
+        )
+
+        workout_session.save(
+            update_fields=[
+                'status',
+                'finished_at',
+            ]
+        )
+
+        return redirect(
+            'trainings:list',
+        )
+
+
+class WorkoutSessionCancelView(
+    LoginRequiredMixin,
+    View,
+):
+
+    def post(
+            self,
+            request,
+            pk,
+            *args,
+            **kwargs,
+    ):
+        workout_session = get_object_or_404(
+            WorkoutSession,
+            pk=pk,
+            owner=request.user,
+            status=WorkoutSessionStatus.STARTED,
+        )
+
+        workout_session.status = (
+            WorkoutSessionStatus.CANCELLED
+        )
+
+        workout_session.save(
+            update_fields=[
+                'status',
+            ]
+        )
+
+        messages.info(
+            request,
+            'Workout session cancelled.'
+        )
+
+        return redirect(
+            'trainings:list',
+        )
+
+
+class WorkoutHistoryView(ListView):
+    model = WorkoutSession
+
+    template_name = 'training/history/workout-history.html'
+
+    context_object_name = 'workout_sessions'
+
+    def get_queryset(self):
+        return WorkoutSession.objects.filter(
+            owner=self.request.user,
+            status=WorkoutSessionStatus.COMPLETED,
+        ).order_by('-started_at')
+
+
+class WorkoutHistoryDetailsView(LoginRequiredMixin, DetailView):
+    model = WorkoutSession
+
+    template_name = (
+        'training/history/workout-history-details.html'
+    )
+
+    context_object_name = 'workout_session'
+
+    def get_queryset(self):
+        return (
+            WorkoutSession.objects.filter(
+                owner=self.request.user,
+                status=WorkoutSessionStatus.COMPLETED,
+            )
+            .select_related(
+                'training_day',
+            )
+            .prefetch_related(
+                'exercise_sessions__training_day_exercise__exercise',
+                'exercise_sessions__sets',
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(
+            **kwargs
+        )
+
+        context['statistics'] = (
+            WorkoutStatisticsService
+            .get_workout_statistics(
+                self.object
+            )
+        )
+
+        return context
+

@@ -3,9 +3,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
+from django.utils.translation import gettext_lazy as _
+
 from progress.forms import RecordCreateForm
 from progress.models import ProgresTracking
-from django.utils.translation import gettext_lazy as _
+from progress.services import ProgressAnalyticsService
+
 UserModel = get_user_model()
 
 class ProgressOverviewView(LoginRequiredMixin, ListView):
@@ -18,6 +21,10 @@ class ProgressOverviewView(LoginRequiredMixin, ListView):
         context['last_record'] = ProgresTracking.objects.filter(
             owner=self.request.user
         ).order_by('-date').first()
+        context['analytics'] = (ProgressAnalyticsService.get_progress_summary(
+                self.request.user
+            )
+        )
         return context
 
 
@@ -88,3 +95,5 @@ class RecordDeleteView(DeleteView):
 
     def get_queryset(self):
         return ProgresTracking.objects.filter(owner=self.request.user)
+
+

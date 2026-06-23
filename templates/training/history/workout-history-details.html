@@ -1,0 +1,72 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h2>
+                {{ workout_session.training_day.day }}
+            </h2>
+        </div>
+        <div class="card-body">
+            <p>
+                Started:
+                {{ workout_session.started_at }}
+            </p>
+            <p>
+                Finished:
+                {{ workout_session.finished_at }}
+            </p>
+            <hr>
+            <div class="row text-center">
+
+                <div class="col-md-2">
+                    <strong>Duration</strong><br>
+                    {{ statistics.duration }}
+                </div>
+
+                <div class="col-md-2">
+                    <strong>Exercises</strong><br>
+                    {{ statistics.exercise_count }}
+                </div>
+
+                <div class="col-md-2">
+                    <strong>Total sets</strong><br>
+                    {{ statistics.total_sets }}
+                </div>
+
+                <div class="col-md-2">
+                    <strong>Completed Sets</strong><br>
+                    {{ statistics.completed_sets }}
+                </div>
+
+                <div class="col-md-2">
+                    <strong>Completion Rate</strong><br>
+                    {{ statistics.completion_rate }}%
+                </div>
+
+            </div>
+
+            <hr>
+            {% for exercise_session in workout_session.exercise_sessions.all %}
+                <h5>
+                    {{ exercise_session.training_day_exercise.exercise.name }}
+                </h5>
+                <ul class="list-group mb-3">
+                    {% for set in exercise_session.sets.all %}
+                        <li class="list-group-item">
+                            Set {{ set.set_number }}
+                            |
+                            {{ set.weight }} kg
+                            |
+                            {{ set.repetitions }} reps
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

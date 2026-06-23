@@ -3,7 +3,85 @@
 
 {% block content %}
 <h1 class="card bg-dark text-white text-center my-4 mx-auto" style="max-width:480px;">Progress Overview</h1>
+    {% if analytics %}
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8">
 
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0">Progress Analytics</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-2">
+                                <small>Starting</small>
+                                <h6>{{ analytics.starting_weight }} kg</h6>
+                            </div>
+
+                            <div class="col-md-2">
+                                <small>Current</small>
+                                <h6>{{ analytics.current_weight }} kg</h6>
+                            </div>
+
+                            <div class="col-md-2">
+                                <small>Target</small>
+                                <h6>{{ analytics.target_weight }} kg</h6>
+                            </div>
+
+                            <div class="col-md-2">
+                                <small>Change</small>
+                                <h6>{{ analytics.weight_change }} kg</h6>
+                            </div>
+
+                            <div class="col-md-2">
+                                <small>Remaining</small>
+                                <h6>{{ analytics.remaining_to_goal }} kg</h6>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Goal Progress</span>
+                                <span>
+                                    {{ analytics.progress_percentage }}%
+                                </span>
+                            </div>
+                            <div class="progress"
+                                 style="height: 25px;">
+                                <div class="progress-bar"
+                                     role="progressbar"
+                                     style="width: {{ analytics.progress_percentage }}%;"
+                                     aria-valuenow="{{ analytics.progress_percentage }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    {{ analytics.progress_percentage }}%
+                                </div>
+                            </div>
+                            {% if analytics.prediction_available %}
+                                <hr>
+                                <div class="row text-center">
+
+                                    <div class="col-md-6">
+                                        <small>Current Pace</small>
+                                        <h5>
+                                            {{ analytics.weekly_rate }} kg/week
+                                        </h5>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <small>Estimated Time</small>
+                                        <h5>
+                                            {{ analytics.estimated_weeks }} weeks
+                                        </h5>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         {% if last_record %}

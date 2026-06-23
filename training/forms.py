@@ -3,7 +3,7 @@
 from django import forms
 
 from choices import WeekDaysChoices
-from training.models import TrainingDay, Exercise, TrainingDayExercise
+from training.models import TrainingDay, Exercise, TrainingDayExercise, WorkoutSet
 
 
 class TrainingDayCreateForm(forms.ModelForm):
@@ -127,3 +127,14 @@ class TrainingDayExerciseForm(forms.ModelForm):
             'custom_sets': 'Sets',
             'custom_repetitions': 'Repetitions',
         }
+
+
+class WorkoutSetEditForm(forms.ModelForm):
+
+    class Meta:
+        model = WorkoutSet
+
+        fields = (
+            'weight',
+            'repetitions',
+        )

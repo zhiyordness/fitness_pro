@@ -1,0 +1,104 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        {% if workout_session.exercise_sessions.all %}
+            <div class="card-header bg-dark text-white">
+                <h2>
+                    Workout Session
+                </h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    <strong>Training Day:</strong>
+                    {{ workout_session.training_day.day }}
+                </p>
+                <p>
+                    <strong>Started:</strong>
+                    {{ workout_session.started_at }}
+                </p>
+                <hr>
+                {% for exercise_session in workout_session.exercise_sessions.all %}
+                    <div class="mb-4">
+                        <h5>
+                            {{ exercise_session.training_day_exercise.exercise.name }}
+                        </h5>
+                        <ul class="list-group">
+                            {% for set in exercise_session.sets.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if set.is_completed %}
+                                            ✅
+                                        {% endif %}
+                                        Set {{ set.set_number }}
+                                        |
+                                        {{ set.weight }} kg
+                                        |
+                                        {{ set.repetitions }} reps
+                                    </div>
+                                    {% if not set.is_completed %}
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'trainings:workout-set-edit' pk=set.pk %}"
+                                               class="btn btn-primary btn-sm">
+                                                Edit
+                                            </a>
+                                            <form method="post"
+                                                  action="{% url 'trainings:workout-set-complete' pk=set.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="btn btn-success btn-sm">
+                                                    Complete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            Completed
+                                        </span>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+                <hr>
+                {% if workout_session.status == 'started' %}
+
+                <div class="d-flex gap-2">
+
+                    <form method="post"
+                          action="{% url 'trainings:workout-session-finish' pk=workout_session.pk %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-success">
+                            Finish Workout
+                        </button>
+                    </form>
+
+                    <form method="post"
+                          action="{% url 'trainings:workout-session-cancel' workout_session.pk %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-outline-danger">
+                            Cancel Workout
+                        </button>
+                    </form>
+
+                </div>
+                {% else %}
+                <div class="alert alert-success mb-0">
+                    Workout Completed
+                </div>
+
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                No exercises in this workout session.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

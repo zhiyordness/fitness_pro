@@ -71,6 +71,20 @@
 
                 {% endif %}
                     <hr>
+                <form method="post"
+                      action="{% url 'trainings:start-workout' pk=training_day.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-success me-1">
+
+                        {% if has_active_workout %}
+                            Continue Workout
+                        {% else %}
+                            Start Workout
+                        {% endif %}
+
+                    </button>
+                </form>
                     <div class="d-flex justify-content-end mb-3">
                         <a href="{% url 'trainings:training-day-edit' pk=training_day.pk %}" class="btn btn-warning me-1">Edit</a>
                         <a href="{% url 'trainings:training-day-delete' pk=training_day.pk %}" class="btn btn-danger me-1">Delete</a>

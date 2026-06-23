@@ -49,7 +49,24 @@ class ExperienceLevelChoices(models.TextChoices):
     INTERMEDIATE = "Intermediate", "Intermediate"
     ADVANCED = "Advanced", "Advanced"
 
+
 class MealStatusChoices(models.TextChoices):
     PLANNED = 'Planned', 'Planned'
     COMPLETED = 'Completed', 'Completed'
     MISSED = 'Missed', 'Missed'
+
+
+class WorkoutSessionStatus(models.TextChoices):
+    STARTED = 'started', 'Started'
+    COMPLETED = 'completed', 'Completed'
+    CANCELLED = 'cancelled', 'Cancelled'
+
+
+class WorkoutDayStatus(models.TextChoices):
+    SUCCESS = 'SUCCESS', 'Success'
+    ACTIVE = 'ACTIVE', 'Active'
+    PENDING = 'PENDING', 'Pending'
+    FAILED = 'FAILED', 'Failed'
+    REST = 'REST', 'Rest'
+
+

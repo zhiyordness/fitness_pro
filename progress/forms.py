@@ -26,8 +26,3 @@ class RecordCreateForm(ModelForm):
                 help_text='The date when this record was created.',
             )
 
-
-
-
-
-

@@ -9,11 +9,17 @@
         <h1 class="card bg-dark text-white text-center py-2 px-4 mb-0">
             Training Overview
         </h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'trainings:training-day-create' %}"
+               class="btn btn-success">
+                Add Training Day
+            </a>
 
-        <a href="{% url 'trainings:training-day-create' %}"
-           class="btn btn-success">
-            Add Training Day
-        </a>
+            <a href="{% url 'trainings:workout-history' %}"
+               class="btn btn-primary">
+                Workout History
+            </a>
+        </div>
     </div>
 
     {% if training_splits %}
@@ -47,6 +53,21 @@
                             <h3 class="mb-0">
                                 {{ split.day }}
                             </h3>
+
+                            <form method="post"
+                                  action="{% url 'trainings:start-workout' pk=split.pk %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-success btn-sm">
+
+                                    {% if split.has_active_workout %}
+                                        Continue Workout
+                                    {% else %}
+                                        Start Workout
+                                    {% endif %}
+
+                                </button>
+                            </form>
 
                             <a href="{% url 'trainings:details' split.pk %}"
                                class="btn btn-warning btn-sm">

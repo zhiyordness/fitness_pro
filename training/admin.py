@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from training.models import Exercise, Muscle, MuscleGroup, TrainingDay
+from training.models import Exercise, Muscle, MuscleGroup, TrainingDay, PersonalRecord, WorkoutSession
 
 
 # Register your models here.
@@ -33,3 +33,12 @@ class ExerciseAdmin(admin.ModelAdmin):
     list_filter = ['day', 'muscle_groups']
     search_fields = ['day', 'description', 'muscle_groups__name']
 
+
+@admin.register(PersonalRecord)
+class PersonalRecordAdmin(admin.ModelAdmin):
+    list_display = ['owner', 'exercise', 'workout_set', 'weight', 'repetitions', 'achieved_at']
+
+
+@admin.register(WorkoutSession)
+class WorkoutSessionAdmin(admin.ModelAdmin):
+    list_display = ['owner', 'status', 'started_at', 'finished_at']

@@ -1,0 +1,33 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Workout History</h2>
+    {% if workout_sessions %}
+        {% for workout in workout_sessions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5>
+                        {{ workout.training_day.day }}
+                    </h5>
+                    <p>
+                        Started:
+                        {{ workout.started_at }}
+                    </p>
+                    <p>
+                        Finished:
+                        {{ workout.finished_at }}
+                    </p>
+                    <a href="{% url 'trainings:workout-history-details' pk=workout.pk %}"
+                       class="btn btn-primary btn-sm">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No completed workouts.</p>
+    {% endif %}
+</div>
+{% endblock %}
