@@ -16,3 +16,11 @@ class ExerciseSerializer(serializers.Serializer):
         model = Exercise
         fields = ['id', 'name', 'sets', 'repetitions', 'video_link', 'muscles']
 
+
+class AdherenceAnalyticsSerializer(serializers.Serializer):
+    completed_workouts = serializers.IntegerField()
+    cancelled_workouts = serializers.IntegerField()
+    total_attempts = serializers.IntegerField()
+    completion_rate = serializers.FloatField()
+    current_streak = serializers.IntegerField()
+    longest_streak = serializers.IntegerField()

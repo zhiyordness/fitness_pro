@@ -7,5 +7,6 @@ urlpatterns = [
     path('foods/', views.FoodDatabaseAPIView.as_view(), name='foods'),
     path('exercises/', views.ExerciseAPIView.as_view(), name='exercises'),
     path('foods/search/', views.FoodSearchAPIView.as_view(), name='food-search'),
+    path('analytics/adherence/', views.AdherenceAnalyticsAPIView.as_view(), name='adherence-analytics'),
 ]
 

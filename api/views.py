@@ -3,7 +3,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from nutrition.models import FoodDatabase
 from training.models import Exercise
-from .serializers import FoodDatabaseSerializer, ExerciseSerializer
+from training.services import AdherenceAnalyticsService
+from .serializers import FoodDatabaseSerializer, ExerciseSerializer, AdherenceAnalyticsSerializer
+
 
 class FoodDatabaseAPIView(generics.ListAPIView):
     queryset = FoodDatabase.objects.all().order_by('name')
@@ -26,3 +28,27 @@ class FoodSearchAPIView(APIView):
         serializer = FoodDatabaseSerializer(foods, many=True)
         return Response(serializer.data)
 
+
+class AdherenceAnalyticsAPIView(APIView):
+
+    permission_classes = [
+        permissions.IsAuthenticated
+    ]
+
+    def get(self, request):
+        analytics = (
+            AdherenceAnalyticsService
+            .get_adherence_overview(
+                request.user
+            )
+        )
+
+        serializer = (
+            AdherenceAnalyticsSerializer(
+                analytics
+            )
+        )
+
+        return Response(
+            serializer.data
+        )

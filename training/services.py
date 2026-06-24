@@ -821,3 +821,5 @@ class WorkoutStreakService:
                 break
 
         return current_streak
+
+

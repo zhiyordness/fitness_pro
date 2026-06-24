@@ -607,6 +607,66 @@
     </div>
 </div>
 
+<!-- Workout Analytics -->
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-header">
+        <h5 class="mb-0">
+            🔥 {% trans "Workout Analytics" %}
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row text-center">
+
+            <div class="col-6 col-lg-3">
+                <small class="text-muted">
+                    {% trans "Current Streak" %}
+                </small>
+
+                <h3>
+                    {{ dashboard.adherence_analytics.current_streak }}
+                </h3>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <small class="text-muted">
+                    {% trans "Longest Streak" %}
+                </small>
+
+                <h3>
+                    {{ dashboard.adherence_analytics.longest_streak }}
+                </h3>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <small class="text-muted">
+                    {% trans "Completion Rate" %}
+                </small>
+
+                <h3>
+                    {{ dashboard.adherence_analytics.completion_rate }}%
+                </h3>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <small class="text-muted">
+                    {% trans "Completed Workouts" %}
+                </small>
+
+                <h3>
+                    {{ dashboard.adherence_analytics.completed_workouts }}
+                </h3>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 <!-- Progress Snapshot -->
 
 <div class="card shadow-sm mb-4">

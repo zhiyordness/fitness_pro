@@ -12,7 +12,9 @@ from django.views import View
 from nutrition.models import Meal
 from progress.models import ProgresTracking
 from training.models import TrainingDay
-
+from training.services import (
+    AdherenceAnalyticsService,
+)
 
 
 class HomePageView(LoginRequiredMixin, View):
@@ -226,6 +228,13 @@ class HomePageView(LoginRequiredMixin, View):
         #     f"Progress: {goal_progress}"
         # )
 
+        adherence_analytics = (
+            AdherenceAnalyticsService
+            .get_adherence_overview(
+                request.user
+            )
+        )
+
         dashboard =  {
             'current_weight': current_weight_record.weight if current_weight_record else None,
             'target_weight': target_weight,
@@ -251,6 +260,8 @@ class HomePageView(LoginRequiredMixin, View):
 
             'next_meal': next_meal,
             'total_calories': total_calories,
+
+            'adherence_analytics': adherence_analytics,
         }
 
         context = {
