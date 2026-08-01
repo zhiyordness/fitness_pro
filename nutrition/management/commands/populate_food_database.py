@@ -29,7 +29,7 @@ class Command(BaseCommand):
         ]
 
         for item_data in food_items:
-            food_item, created = FoodDatabase.objects.get_or_create(
+            food_item, created = FoodDatabase.objects.update_or_create(
                 name=item_data['name'],
                 defaults={
                     'calories': item_data['calories'],

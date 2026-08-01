@@ -21,7 +21,7 @@ django-unfold==0.77.1
 django-utils==0.0.2
 djangorestframework==3.17.1
 executing==2.2.1
-gunicorn==25.1.0
+gunicorn==23.0.0
 idna==3.11
 ipython==9.11.0
 ipython_pygments_lexers==1.1.1

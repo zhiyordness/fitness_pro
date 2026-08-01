@@ -172,20 +172,18 @@ class Command(BaseCommand):
         with transaction.atomic():
             for mg_name, muscles_data in data.items():
                 muscle_group, created = MuscleGroup.objects.get_or_create(name=mg_name)
-                if created:
-                    self.stdout.write(self.style.SUCCESS(f'Created MuscleGroup: {muscle_group.name}'))
-                else:
-                    self.stdout.write(self.style.WARNING(f'MuscleGroup already exists: {muscle_group.name}'))
+
+                message = 'Created MuscleGroup' if created else 'MuscleGroup already exists'
+                self.stdout.write(self.style.SUCCESS(f'{message} MuscleGroup: {muscle_group.name}'))
 
                 for m_name, exercises_data in muscles_data.items():
                     muscle, created = Muscle.objects.get_or_create(name=m_name, group=muscle_group)
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'Created Muscle: {muscle.name}'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'Muscle already exists: {muscle.name}'))
+
+                    message = 'Created Muscle' if created else 'Muscle already exists'
+                    self.stdout.write(self.style.SUCCESS(f'{message} Muscle: {muscle.name}'))
 
                     for exercise_data in exercises_data:
-                        exercise, created = Exercise.objects.get_or_create(
+                        exercise, created = Exercise.objects.update_or_create(
                             name=exercise_data['name'],
                             defaults={
                                 'sets': exercise_data['sets'],
@@ -193,14 +191,8 @@ class Command(BaseCommand):
                                 'video_link': exercise_data['video_link'],
                             }
                         )
-                        if created:
-                            self.stdout.write(self.style.SUCCESS(f'Created Exercise: {exercise.name}'))
-                        else:
-                            # Update if exists, in case sets/reps/link changed
-                            for key, value in exercise_data.items():
-                                setattr(exercise, key, value)
-                            exercise.save()
-                            self.stdout.write(self.style.WARNING(f'Exercise already exists, updated: {exercise.name}'))
+                        message = 'Created' if created else 'Updated'
+                        self.stdout.write(self.style.SUCCESS(f'{message} Exercise: {exercise.name}'))
                         
                         # Add muscle to exercise M2M relationship
                         if muscle not in exercise.muscles.all():
