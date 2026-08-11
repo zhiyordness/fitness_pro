@@ -1,12 +1,16 @@
+import logging
+
 import json
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import IntegerField, When, Case
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import DeleteView, DetailView, CreateView, ListView, UpdateView
 from choices import WeekDaysChoices, WorkoutSessionStatus
+from common.logging.audit import AuditLogger
 from common.mixins import StaffRequiredMixin
 from training.forms import TrainingDayCreateForm, ExerciseCreateForm, TrainingDayExerciseForm, WorkoutSetEditForm
 from training.models import TrainingDay, Exercise, MuscleGroup, TrainingDayExercise, WorkoutSession, WorkoutSet
@@ -15,6 +19,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 
+logger = logging.getLogger(__name__)
 
 from django.utils import timezone
 
@@ -146,43 +151,37 @@ class TrainingDayCreateView(LoginRequiredMixin, CreateView):
 
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
-        self.object.owner = self.request.user
-        self.object.save()
+        training_day = form.save(commit=False)
+        training_day.owner = self.request.user
+        training_day.save()
 
-        exercise_ids = self.request.POST.get('selected_exercises', '')
+        self.object = training_day
 
-        if exercise_ids:
+        selected_exercise_ids = self.request.POST.get(
+            'selected_exercises',
+            '',
+        )
+
+        if selected_exercise_ids:
             exercise_id_list = [
-                int(id.strip())
-                for id in exercise_ids.split(',')
-                if id.strip()
+                int(exercise_id.strip())
+                for exercise_id in selected_exercise_ids.split(',')
+                if exercise_id.strip()
             ]
 
-            for order, exercise_id in enumerate(
-                    exercise_id_list,
-                    start=1,
-            ):
-                exercise = Exercise.objects.get(
-                    pk=exercise_id
-                )
+            TrainingDayService.configure_training_day(
+                training_day=training_day,
+                exercise_id_list=exercise_id_list,
+            )
 
-                TrainingDayExercise.objects.create(
-                    training_day=self.object,
-                    exercise=exercise,
-                    custom_sets=exercise.sets,
-                    custom_repetitions=exercise.repetitions,
-                    order=order,
-                )
-
-            muscle_groups = MuscleGroup.objects.filter(
-                muscles__exercises__id__in=exercise_id_list
-            ).distinct()
-
-            self.object.muscle_groups.set(muscle_groups)
+        AuditLogger.training_day_created(
+            user=self.request.user,
+            training_day=training_day,
+        )
 
         messages.success(self.request, _('The training day has been created successfully!'))
-        return super().form_valid(form)
+
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse_lazy('trainings:details', kwargs={'pk': self.object.pk})
@@ -244,52 +243,33 @@ class TrainingDayEditView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         response = super().form_valid(form)
 
-        exercise_ids = self.request.POST.get(
+        training_day = self.object
+
+        selected_exercise_ids = self.request.POST.get(
             'selected_exercises',
             '',
         )
 
-        if exercise_ids:
+        TrainingDayService.clear_training_day(
+            training_day=training_day,
+        )
+
+        if selected_exercise_ids:
             exercise_id_list = [
-                int(id.strip())
-                for id in exercise_ids.split(',')
-                if id.strip()
+                int(exercise_id_str.strip())
+                for exercise_id_str in selected_exercise_ids.split(',')
+                if exercise_id_str.strip()
             ]
 
-            TrainingDayExercise.objects.filter(
-                training_day=self.object
-            ).delete()
-
-            for order, exercise_id in enumerate(
-                    exercise_id_list,
-                    start=1,
-            ):
-                exercise = Exercise.objects.get(
-                    pk=exercise_id
-                )
-
-                TrainingDayExercise.objects.create(
-                    training_day=self.object,
-                    exercise=exercise,
-                    custom_sets=exercise.sets,
-                    custom_repetitions=exercise.repetitions,
-                    order=order,
-                )
-
-            muscle_groups = MuscleGroup.objects.filter(
-                muscles__exercises__id__in=exercise_id_list
-            ).distinct()
-
-            self.object.muscle_groups.set(
-                muscle_groups
+            TrainingDayService.configure_training_day(
+                training_day=training_day,
+                exercise_id_list=exercise_id_list,
             )
 
-        else:
-            TrainingDayExercise.objects.filter(
-                training_day=self.object
-            ).delete()
-
-            self.object.muscle_groups.clear()
+        AuditLogger.training_day_updated(
+            user=self.request.user,
+            training_day=training_day,
+        )
 
         messages.success(
             self.request,
@@ -314,8 +294,27 @@ class TrainingDayDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'training/training_day/training-day-delete.html'
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, _('Split has been deleted successfully!'))
-        return super().delete(request, *args, **kwargs)
+        training_day = self.get_object()
+
+        training_day_id = training_day.pk
+        training_day_name = training_day.day
+        training_day_description = training_day.description
+
+        response = super().delete(request, *args, **kwargs)
+
+        AuditLogger.training_day_deleted(
+            user=request.user,
+            training_day_id=training_day_id,
+            day_name=training_day_name,
+            description=training_day_description,
+        )
+
+        messages.success(
+            request,
+            _("Split has been deleted successfully!")
+        )
+
+        return response
 
     def get_queryset(self):
         return TrainingDay.objects.filter(owner=self.request.user).prefetch_related(
@@ -351,8 +350,19 @@ class ExerciseCreateView(StaffRequiredMixin, CreateView):
     success_url = reverse_lazy('trainings:list')
 
     def form_valid(self, form):
-        messages.success(self.request, _('Exercise has been created successfully!'))
-        return super().form_valid(form)
+        response = super().form_valid(form)
+
+        AuditLogger.exercise_created(
+            user=self.request.user,
+            exercise=self.object,
+        )
+
+        messages.success(
+            self.request,
+            _("Exercise has been created successfully!")
+        )
+
+        return response
 
 
 class ExerciseEditView(StaffRequiredMixin, UpdateView):
@@ -361,8 +371,17 @@ class ExerciseEditView(StaffRequiredMixin, UpdateView):
     template_name = 'training/exercise/exercise_edit.html'
 
     def form_valid(self, form):
+
+        response = super().form_valid(form)
+
+        AuditLogger.exercise_updated(
+            user=self.request.user,
+            exercise=self.object,
+        )
+
         messages.success(self.request, _('Exercise has been updated successfully!'))
-        return super().form_valid(form)
+
+        return response
 
     def get_success_url(self):
         return reverse_lazy('trainings:exercise-details', kwargs={'pk': self.object.pk})
@@ -373,9 +392,30 @@ class ExerciseDeleteView(StaffRequiredMixin, DeleteView):
     success_url = reverse_lazy('trainings:exercise-list')
     template_name = 'training/exercise/exercise-delete.html'
 
-    def delete(self, form, *args, **kwargs):
-        messages.success(self.request, _('Exercise has been deleted successfully!'))
-        return super().delete(form, *args, **kwargs)
+    def delete(self, request, *args, **kwargs):
+        exercise = self.get_object()
+
+        exercise_id = exercise.pk
+        exercise_name = exercise.name
+        exercise_sets = exercise.sets
+        exercise_repetitions = exercise.repetitions
+
+        response = super().delete(request, *args, **kwargs)
+
+        AuditLogger.exercise_deleted(
+            user=request.user,
+            exercise_id=exercise_id,
+            exercise_name=exercise_name,
+            exercise_sets=exercise_sets,
+            exercise_repetitions=exercise_repetitions,
+        )
+
+        messages.success(
+            request,
+            _("Exercise has been deleted successfully!")
+        )
+
+        return response
 
 
 class ExerciseDetailsView(DetailView):
@@ -407,12 +447,20 @@ class TrainingDayExerciseEditView(
         )
 
     def form_valid(self, form):
+
+        response = super().form_valid(form)
+
+        AuditLogger.training_day_exercise_updated(
+            user=self.request.user,
+            training_day_exercise=self.object,
+        )
+
         messages.success(
             self.request,
             _('Exercise configuration updated successfully!')
         )
 
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy(
@@ -426,56 +474,66 @@ class TrainingDayExerciseMoveUpView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
 
-        exercise = get_object_or_404(
+        training_day_exercise = get_object_or_404(
             TrainingDayExercise,
             pk=pk,
             training_day__owner=request.user,
         )
 
-        previous_exercise = (
+        previous_training_day_exercise = (
             TrainingDayExercise.objects.filter(
-                training_day=exercise.training_day,
-                order__lt=exercise.order,
+                training_day=training_day_exercise.training_day,
+                order__lt=training_day_exercise.order,
             )
             .order_by('-order')
             .first()
         )
 
-        if previous_exercise:
+        if previous_training_day_exercise:
             TrainingDayService.swap_exercise_order(
-                exercise,
-                previous_exercise,
+                training_day_exercise,
+                previous_training_day_exercise,
+            )
+            AuditLogger.training_day_exercise_moved_up(
+                user=request.user,
+                training_day_exercise=training_day_exercise,
             )
 
-        return redirect('trainings:details', pk=exercise.training_day.pk,)
+        training_day = training_day_exercise.training_day
+
+        return redirect('trainings:details', pk=training_day.pk,)
 
 
 class TrainingDayExerciseMoveDownView(LoginRequiredMixin, View,):
 
     def get(self, request, pk):
 
-        exercise = get_object_or_404(
+        training_day_exercise = get_object_or_404(
             TrainingDayExercise,
             pk=pk,
             training_day__owner=request.user,
         )
 
-        next_exercise = (
+        next_training_day_exercise = (
             TrainingDayExercise.objects.filter(
-                training_day=exercise.training_day,
-                order__gt=exercise.order,
+                training_day=training_day_exercise.training_day,
+                order__gt=training_day_exercise.order,
             )
             .order_by('order')
             .first()
         )
 
-        if next_exercise:
+        if next_training_day_exercise:
             TrainingDayService.swap_exercise_order(
-                exercise,
-                next_exercise,
+                training_day_exercise,
+                next_training_day_exercise,
+            )
+            AuditLogger.training_day_exercise_moved_down(
+                user=request.user,
+                training_day_exercise=training_day_exercise,
             )
 
-        return redirect('trainings:details', pk=exercise.training_day.pk,)
+        return redirect('trainings:details', pk=training_day_exercise.training_day.pk,)
 
 
 class WorkoutStartView(LoginRequiredMixin, View):
@@ -498,6 +556,11 @@ class WorkoutStartView(LoginRequiredMixin, View):
                 user=request.user,
                 training_day=training_day,
             )
+        )
+
+        AuditLogger.workout_started(
+            user=request.user,
+            workout_session=workout_session,
         )
 
         return redirect(
@@ -558,20 +621,20 @@ class WorkoutSetCompleteView(LoginRequiredMixin, View):
             workout_set
         )
 
+        workout_session = workout_set.exercise_session.workout_session
+
         WorkoutSessionService.check_and_finish_workout(
-            workout_set
-            .exercise_session
-            .workout_session
+            workout_session
+        )
+
+        AuditLogger.workout_set_completed(
+            user=request.user,
+            workout_set=workout_set,
         )
 
         return redirect(
             'trainings:workout-session-details',
-            pk=(
-                workout_set
-                .exercise_session
-                .workout_session
-                .pk
-            ),
+            pk=workout_session.pk,
         )
 
 
@@ -602,6 +665,19 @@ class WorkoutSetEditView(LoginRequiredMixin, UpdateView):
                 )
             }
         )
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        logger.info(
+            "Workout set updated.",
+            extra={
+                "user_id": self.request.user.pk,
+                "workout_set_id": self.object.pk,
+            },
+        )
+
+        return response
 
 
 class WorkoutSessionFinishView(LoginRequiredMixin, View):
@@ -654,6 +730,16 @@ class WorkoutSessionFinishView(LoginRequiredMixin, View):
             ]
         )
 
+        AuditLogger.workout_finished(
+            user=request.user,
+            workout_session=workout_session,
+        )
+
+        messages.success(
+            request,
+            _("Workout session finished successfully!")
+        )
+
         return redirect(
             'trainings:list',
         )
@@ -686,6 +772,11 @@ class WorkoutSessionCancelView(
             update_fields=[
                 'status',
             ]
+        )
+
+        AuditLogger.workout_cancelled(
+            user=request.user,
+            workout_session=workout_session,
         )
 
         messages.info(

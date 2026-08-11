@@ -1,3 +1,4 @@
+import logging
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import When, Case, IntegerField
@@ -7,6 +8,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView, ListView
 from choices import WeekDaysChoices, MealStatusChoices
+from common.logging.audit import AuditLogger
 from common.mixins import StaffRequiredMixin
 from nutrition.forms import MealForm, MealFoodItemForm, DayCreateForm, NutritionTargetForm
 from nutrition.models import Meal, MealFoodItem, NutritionDay, FoodDatabase, MealCompletion, NutritionTarget
@@ -14,6 +16,7 @@ from nutrition.services import NutritionCalculator, NutritionService
 from django.utils.translation import gettext_lazy as _
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
 
 class NutritionHomeView(LoginRequiredMixin, ListView):
     model = NutritionDay
@@ -88,8 +91,16 @@ class MealCreateView(LoginRequiredMixin, CreateView):
         meal_name = form.cleaned_data['name']
         form.instance.order = Meal.get_order_for_name(meal_name)
         form.instance.day = day
+
+        response = super().form_valid(form)
+
+        AuditLogger.meal_created(
+            user=self.request.user,
+            meal=self.object,
+        )
+
         messages.success(self.request, _('The Meal has been created successfully!'))
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details', kwargs={'pk': self.object.day.pk})
@@ -104,8 +115,15 @@ class MealEditView(LoginRequiredMixin, UpdateView):
         meal_name = form.cleaned_data['name']
         form.instance.order = Meal.get_order_for_name(meal_name)
 
+        response = super().form_valid(form)
+
+        AuditLogger.meal_updated(
+            user=self.request.user,
+            meal=self.object,
+        )
+
         messages.success(self.request, _('The meal has been updated successfully!'))
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details',kwargs={'pk': self.object.day.pk})
@@ -120,8 +138,22 @@ class MealDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'nutrition/meal/meal-delete.html'
 
     def delete(self, request, *args, **kwargs):
+        meal = self.get_object()
+
+        meal_id = meal.pk
+        meal_name = meal.name
+        day_id = meal.day.pk
+
+        response = super().delete(request, *args, **kwargs)
+
+        AuditLogger.meal_deleted(
+            user=request.user,
+            meal_id=meal_id,
+            meal_name=meal_name,
+            day_id=day_id,
+        )
         messages.success(self.request, _('The meal has been deleted successfully!'))
-        return super().delete(request, *args, **kwargs)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details',kwargs={'pk': self.object.day.pk})
@@ -142,6 +174,16 @@ class ItemAddView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.meal = self.meal
+
+        logger.info('Item created successfully.',
+            extra={
+                'user_id': self.request.user.pk,
+                'meal_id': self.meal.pk,
+                'food_id': form.cleaned_data['food'].pk,
+                'item_name': form.cleaned_data['food'].name,
+            },
+        )
+
         messages.success(self.request, _('The item has been created successfully!'))
         return super().form_valid(form)
 
@@ -169,7 +211,14 @@ class ItemEditView(LoginRequiredMixin, UpdateView):
             self.request,
             _('The item has been updated successfully!')
         )
-
+        logger.info(
+            "Food item updated successfully.",
+            extra={
+                "user_id": self.request.user.pk,
+                "item_id": self.object.pk,
+                "food_name": self.object.food.name,
+            },
+        )
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -193,6 +242,33 @@ class ItemDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_queryset(self):
         return MealFoodItem.objects.filter(meal__day__owner=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        item = self.get_object()
+
+        item_id = item.pk
+        food_id = item.food.pk
+        food_name = item.food.name
+        meal_id = item.meal.pk
+
+        response = super().delete(request, *args, **kwargs)
+
+        logger.info(
+            "Food item deleted successfully.",
+            extra={
+                "user_id": request.user.pk,
+                "item_id": item_id,
+                "food_id": food_id,
+                "meal_id": meal_id,
+                "food_name": food_name,
+            },
+        )
+
+        messages.success(
+            self.request,
+            _('The item has been deleted successfully!')
+        )
+        return response
 
 
 
@@ -250,8 +326,16 @@ class DayCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
+
+        response = super().form_valid(form)
+
+        AuditLogger.day_created(
+            user=self.request.user,
+            day=self.object,
+        )
+
         messages.success(self.request, _('The day has been created successfully!'))
-        return super().form_valid(form)
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:day-details', kwargs={'pk': self.object.pk})
@@ -262,8 +346,25 @@ class DayDeleteView(LoginRequiredMixin, DeleteView):
     context_object_name = 'day'
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, _('The day has been deleted successfully!'))
-        return super().delete(request, *args, **kwargs)
+        day = self.get_object()
+
+        day_id = day.pk
+        day_name = day.name
+
+        response = super().delete(request, *args, **kwargs)
+
+        AuditLogger.day_deleted(
+            user=request.user,
+            day_id=day_id,
+            day_name=day_name,
+        )
+
+        messages.success(
+            request,
+            _("The day has been deleted successfully!")
+        )
+
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:nutrition-home')
@@ -279,8 +380,16 @@ class DayEditView(LoginRequiredMixin, UpdateView):
     template_name = 'nutrition/day/day-edit.html'
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+
+        AuditLogger.day_updated(
+            user=self.request.user,
+            day=self.object,
+        )
+
         messages.success(self.request, _('The day has been updated successfully!'))
-        return super().form_valid(form)
+
+        return response
 
     def get_queryset(self):
         return NutritionDay.objects.filter(owner=self.request.user)
@@ -316,8 +425,17 @@ class FoodDatabaseCreateView(StaffRequiredMixin, CreateView):
     template_name = 'nutrition/food-database/food-database-create.html'
 
     def form_valid(self, form):
+
+        response = super().form_valid(form)
+
+        AuditLogger.food_created(
+            user=self.request.user,
+            food=self.object,
+        )
+
         messages.success(self.request, _('The item has been created successfully!'))
-        return super().form_valid(form)
+
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:food-database-list')
@@ -329,8 +447,25 @@ class FoodDatabaseDeleteView(StaffRequiredMixin, DeleteView):
     context_object_name = 'food'
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, _('The item has been deleted successfully!'))
-        return super().delete(request, *args, **kwargs)
+        food = self.get_object()
+
+        food_id = food.pk
+        food_name = food.name
+
+        response = super().delete(request, *args, **kwargs)
+
+        AuditLogger.food_deleted(
+            user=request.user,
+            food_id=food_id,
+            food_name=food_name,
+        )
+
+        messages.success(
+            request,
+            _("The item has been deleted successfully!")
+        )
+
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:food-database-list')
@@ -343,8 +478,16 @@ class FoodDatabaseEditView(StaffRequiredMixin, UpdateView):
     context_object_name = 'food'
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+
+        AuditLogger.food_updated(
+            user=self.request.user,
+            food=self.object,
+        )
+
         messages.success(self.request, _('The item has been updated successfully!'))
-        return super().form_valid(form)
+
+        return response
 
     def get_success_url(self):
         return reverse_lazy('nutrition:food-database-list')
@@ -364,6 +507,11 @@ class MealCompleteView(LoginRequiredMixin, View):
         NutritionService.complete_meal(
             meal=meal,
             user=request.user,
+        )
+
+        AuditLogger.meal_completed(
+            user=request.user,
+            meal=meal,
         )
 
         messages.success(
@@ -388,6 +536,11 @@ class MealMissedView(LoginRequiredMixin, View):
         NutritionService.miss_meal(
             meal=meal,
             user=request.user,
+        )
+
+        AuditLogger.meal_missed(
+            user=request.user,
+            meal=meal,
         )
 
         messages.success(
@@ -415,6 +568,11 @@ class MealPlannedView(LoginRequiredMixin, View):
         if completion:
             completion.status = MealStatusChoices.PLANNED
             completion.save()
+
+            AuditLogger.meal_reset_to_planned(
+                user=request.user,
+                meal=meal,
+            )
 
         messages.success(
             request,
@@ -448,9 +606,17 @@ class NutritionTargetUpdateView(LoginRequiredMixin, UpdateView,):
         )
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+
+        AuditLogger.nutrition_target_updated(
+            user=self.request.user,
+            target=self.object,
+        )
+
         messages.success(
             self.request,
             _('Nutrition goals updated successfully!')
         )
 
-        return super().form_valid(form)
+        return response
+

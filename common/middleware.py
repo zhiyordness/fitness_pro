@@ -104,3 +104,5 @@ class RateLimitMiddleware:
         except Exception as e:
             logger.error(f'Rate limit middleware error: {e}')
             return self.get_response(request)
+
+

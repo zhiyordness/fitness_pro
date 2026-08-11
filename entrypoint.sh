@@ -24,6 +24,15 @@ python manage.py populate_food_database
 echo "Populating training database..."
 python manage.py populate_training_data
 
-echo "Starting Gunicorn..."
+if [ "$DEBUG" = "True" ]; then
+    echo "Starting Django Development Server..."
+    exec python manage.py runserver 0.0.0.0:8000
+else
+    echo "Starting Gunicorn..."
+    exec gunicorn fitness_pro.wsgi:application --bind 0.0.0.0:8000
+fi
 
-exec gunicorn fitness_pro.wsgi:application --bind 0.0.0.0:8000
+#echo "Starting Gunicorn..."
+#
+#exec gunicorn fitness_pro.wsgi:application --bind 0.0.0.0:8000
+

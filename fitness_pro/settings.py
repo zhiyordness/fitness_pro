@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import socket
 
 load_dotenv()
 
@@ -41,7 +42,6 @@ PROJECT_APPS = [
     'progress',
     'accounts.apps.AccountsConfig',
     'api',
-    'debug_toolbar',
 ]
 
 INSTALLED_APPS = [
@@ -58,6 +58,11 @@ INSTALLED_APPS = [
     'cloudinary_storage',
 ] + PROJECT_APPS
 
+if DEBUG and "test" not in sys.argv:
+    INSTALLED_APPS += [
+        "debug_toolbar",
+    ]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -71,12 +76,11 @@ MIDDLEWARE = [
     'common.middleware.RateLimitMiddleware',
 ]
 
-if DEBUG:
+if DEBUG and "test" not in sys.argv:
     MIDDLEWARE.insert(
         2,
-        'debug_toolbar.middleware.DebugToolbarMiddleware',
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
     )
-
 ROOT_URLCONF = 'fitness_pro.urls'
 
 TEMPLATES = [
@@ -245,16 +249,74 @@ CACHES = {
         'LOCATION': os.getenv('REDIS_URL') + '/1',
     }
 }
+PROGRESS_SUMMARY_CACHE_TIMEOUT = 300
+CACHE_LOCK_TIMEOUT = 10
+CACHE_LOCK_RETRY_COUNT = 20
+CACHE_LOCK_RETRY_DELAY = 0.05
+
 
 os.environ['SSL_CERT_FILE'] = certifi.where()
 os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+
 INTERNAL_IPS = [
-    '127.0.0.1',
+    "*",
 ]
-if DEBUG:
-    import socket
-    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-    INTERNAL_IPS += [ip[:-1] + "1" for ip in ips]
+
+INTERNAL_IPS += [
+    ip[:-1] + "1"
+    for ip in ips
+]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'standard': {
+            'format': (
+                '[{levelname}] {asctime} '
+                '{name} '
+                '[user={user_id}] '
+                '{message}'
+            ),
+            'style': '{',
+        },
+    },
+
+    'filters': {
+        'user_context': {
+            '()': 'common.logging.filters.UserContextFilter',
+        },
+    },
+
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+            'filters': ['user_context'],
+        },
+    },
+
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": lambda request: True,
+}
+

@@ -17,6 +17,8 @@ import logging
 
 from nutrition.services import NutritionService
 
+logger = logging.getLogger(__name__)
+
 # Create your views here.
 
 UserModel = get_user_model()
@@ -31,16 +33,44 @@ class FitnessProUserRegisterView(CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
 
+        logger.info(
+            'User registered successfully.',
+            extra={
+                'user_id': self.object.pk,
+                'email': self.object.email,
+            },
+        )
+
         success, message = send_verification_email(self.request, self.object)
         if success:
+            logger.info(
+                'Verification email sent successfully.',
+                extra={
+                    'user_id': self.object.pk,
+                    'email': self.object.email,
+                },
+            )
             messages.success(self.request, _('Your account has been created successfully! Please check your email to verify your account.'))
         else:
             self.object.delete()
+            logger.error(
+                'Failed to send verification email. Registration rolled back.',
+                extra={
+                    'user_id': self.object.pk,
+                    'email': self.object.email,
+                },
+            )
             messages.error(self.request, _('Registration failed due to email delivery issue. Please try again.'))
             return self.form_invalid(form)
         return redirect('accounts:login')
 
     def form_invalid(self, form):
+        logger.warning(
+            'User registration validation failed.',
+            extra={
+                'errors': form.errors.as_json()
+            },
+        )
         messages.error(self.request, _('There was an error with your registration. Please correct the errors below and try again.'))
         return super().form_invalid(form)
 
@@ -82,8 +112,16 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         messages.success(self.request, _('Your profile has been updated successfully!'))
-        return super().form_valid(form)
 
+        logger.info(
+            'User profile updated successfully.',
+            extra={
+                'user_id': self.object.user.pk,
+                'email': self.object.user.email,
+            }
+        )
+
+        return super().form_valid(form)
 
 
 class DeleteUserView(LoginRequiredMixin, DeleteView):
@@ -108,6 +146,15 @@ class DeleteUserView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         response = super().delete(request, *args, **kwargs)
+
+        logger.info(
+            'User account deleted successfully.',
+            extra={
+                'user_id': self.object.pk,
+                'email': self.object.email,
+            },
+        )
+
         logout(request)
         messages.success(self.request, _('Your profile has been deleted successfully!'))
         return response
@@ -121,6 +168,15 @@ class InitialLoginView(LoginView):
 
     def form_valid(self, form):
         user = form.get_user()
+
+        logger.info(
+            'User logged in successfully.',
+            extra={
+                'user_id': user.pk,
+                'email': user.email,
+            }
+        )
+
         is_first_login = user.last_login is None
 
         self.request.session['is_first_login'] = is_first_login
@@ -147,18 +203,44 @@ class VerifyEmailView(View):
 
         token_object = get_object_or_404(EmailVerificationToken, token=token)
         if not token_object.is_valid():
+
+            logger.warning(
+                'Attempted to verify email with expired token.',
+                extra={
+                    'user_id': token_object.user.pk,
+                    'email': token_object.user.email,
+                },
+            )
+
             messages.error(request, _('This verification link has expired. Please request a new one.'))
             return redirect('accounts:resend-verification')
 
         user = token_object.user
 
         if user.is_email_verified:
+
+            logger.info(
+                'Attempted to verify email for already verified user.',
+                extra={
+                    'user_id': user.pk,
+                    'email': user.email,
+                },
+            )
+
             messages.info(request, _('Your email is already verified. Please log in.'))
             return redirect('accounts:login')
 
         user.is_email_verified = True
         user.is_active = True
         user.save()
+
+        logger.info(
+            'User email verified successfully.',
+            extra={
+                'user_id': user.pk,
+                'email': user.email,
+            },
+        )
 
         token_object.delete()
 
@@ -185,6 +267,13 @@ class ResendVerificationEmailView(View):
 
             send_verification_email(request, user)
 
+        logger.info(
+            'Verification email resent.',
+            extra={
+                'user_id': user.pk ,
+                'email': user.email,
+            },
+        )
 
         messages.success(request, _('If an account with that email exists and is not verified, a verification email has been sent.'))
 

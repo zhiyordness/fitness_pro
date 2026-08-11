@@ -6,10 +6,84 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from choices import WorkoutSessionStatus, WorkoutDayStatus
-from training.models import WorkoutSession, WorkoutExerciseSession, WorkoutSet, PersonalRecord, TrainingDay
+from training.models import WorkoutSession, WorkoutExerciseSession, WorkoutSet, PersonalRecord, TrainingDay, Exercise, \
+    TrainingDayExercise, MuscleGroup
 
 
 class TrainingDayService:
+
+    @staticmethod
+    def configure_training_day(training_day, exercise_id_list):
+        """
+        Populate a training day with exercises and
+        automatically assign muscle groups.
+        """
+        for order, exercise_id in enumerate(
+                exercise_id_list,
+                start=1,
+        ):
+            exercise = Exercise.objects.get(
+                pk=exercise_id
+            )
+
+            TrainingDayExercise.objects.create(
+                training_day=training_day,
+                exercise=exercise,
+                custom_sets=exercise.sets,
+                custom_repetitions=exercise.repetitions,
+                order=order,
+            )
+
+        muscle_groups = MuscleGroup.objects.filter(
+            muscles__exercises__id__in=exercise_id_list
+        ).distinct()
+
+        training_day.muscle_groups.set(muscle_groups)
+
+    @staticmethod
+    def clear_training_day(training_day):
+        """
+        Remove all exercises and muscle groups
+        from a training day.
+        """
+        TrainingDayExercise.objects.filter(
+            training_day=training_day
+        ).delete()
+
+        training_day.muscle_groups.clear()
+
+
+    @staticmethod
+    def swap_exercise_order(current_exercise, target_exercise,):
+        current_order = current_exercise.order
+
+        current_exercise.order = target_exercise.order
+        target_exercise.order = current_order
+
+        current_exercise.save()
+        target_exercise.save()
+
+
+    @staticmethod
+    def build_exercises_by_muscle(training_day):
+        exercises_by_muscle = {}
+
+        for training_day_exercise in (
+                training_day.training_day_exercises.all()
+        ):
+            exercise = training_day_exercise.exercise
+
+            for muscle in exercise.muscles.all():
+
+                if muscle.name not in exercises_by_muscle:
+                    exercises_by_muscle[muscle.name] = []
+
+                exercises_by_muscle[muscle.name].append(
+                    training_day_exercise
+                )
+
+        return exercises_by_muscle
+
 
     @staticmethod
     def build_muscle_data(muscle_groups):
@@ -39,6 +113,7 @@ class TrainingDayService:
                     }
         return json.dumps(muscle_data)
 
+
     @staticmethod
     def build_selected_exercises(selected_exercises, muscle_groups):
         enhanced_exercises = []
@@ -60,36 +135,6 @@ class TrainingDayService:
                     continue
                 break
         return json.dumps(enhanced_exercises)
-
-    @staticmethod
-    def build_exercises_by_muscle(training_day):
-        exercises_by_muscle = {}
-
-        for training_day_exercise in (
-                training_day.training_day_exercises.all()
-        ):
-            exercise = training_day_exercise.exercise
-
-            for muscle in exercise.muscles.all():
-
-                if muscle.name not in exercises_by_muscle:
-                    exercises_by_muscle[muscle.name] = []
-
-                exercises_by_muscle[muscle.name].append(
-                    training_day_exercise
-                )
-
-        return exercises_by_muscle
-
-    @staticmethod
-    def swap_exercise_order(current_exercise, target_exercise,):
-        current_order = current_exercise.order
-
-        current_exercise.order = target_exercise.order
-        target_exercise.order = current_order
-
-        current_exercise.save()
-        target_exercise.save()
 
 
 class WorkoutSessionService:
