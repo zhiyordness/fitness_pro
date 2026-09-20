@@ -1,11 +1,15 @@
 import time
-import uuid
 
 from django.core.cache import cache
 
 from common.logging.audit import AuditLogger
-from common.services.cache_exceptions import CacheTimeoutError
+from common.services.cache_exceptions import CacheTimeoutError, CacheUnavailableError
 from django.conf import settings
+
+from common.services.cache_lock import CacheLock
+from common.services.redis_adapter import RedisAdapter
+from common.services.lock_renewal import LockRenewal
+from redis.exceptions import RedisError
 
 
 class CacheService:
@@ -13,7 +17,12 @@ class CacheService:
 
     @staticmethod
     def get(key):
-        return cache.get(key)
+        try:
+            return cache.get(key)
+        except RedisError as exc:
+            raise CacheUnavailableError(
+                "Cache backend is unavailable."
+            ) from exc
 
 
     @staticmethod
@@ -120,42 +129,6 @@ class CacheService:
 
         CacheService._cache_timeout(key)
 
-    @staticmethod
-    def _lock_key(key):
-        return f"lock:{key}"
-
-    @staticmethod
-    def _acquire_lock(key):
-
-        lock_token = str(uuid.uuid4())
-
-        lock_acquired = cache.add(
-            CacheService._lock_key(key),
-            lock_token,
-            timeout=settings.CACHE_LOCK_TIMEOUT,
-        )
-
-        if not lock_acquired:
-            return None
-
-        return lock_token
-
-    @staticmethod
-    def _release_lock(
-            key,
-            lock_token,
-    ):
-
-        stored_token = cache.get(
-            CacheService._lock_key(key)
-        )
-
-        if stored_token != lock_token:
-            return
-
-        cache.delete(
-            CacheService._lock_key(key)
-        )
 
     @staticmethod
     def _wait_for_cache(
@@ -208,26 +181,46 @@ class CacheService:
         )
 
     @staticmethod
-    def _try_build_with_lock(
-            *,
-            key,
-            builder,
-            timeout,
-    ):
-        lock_token = CacheService._acquire_lock(key)
+    def _try_build_with_lock(*, key, builder, timeout):
+        client = RedisAdapter.get_client()
 
-        if lock_token is None:
+        lock = CacheLock(
+            client=client,
+            key=key,
+            timeout=settings.CACHE_LOCK_TIMEOUT,
+        )
+
+        if not lock.acquire():
             return None
 
+        renewal = LockRenewal(
+            lock=lock,
+            interval=settings.CACHE_LOCK_TIMEOUT / 2,
+        )
+
+        renewal.start()
+
         try:
-            return CacheService._build_and_cache(
-                key=key,
-                builder=builder,
+            value = builder()
+
+            if renewal.lock_lost_event.is_set():
+                return value
+
+            if value is None:
+                return None
+
+            RedisAdapter.set_if_owner(
+                client=client,
+                lock_key=f"lock:{key}",
+                lock_token=lock.token,
+                cache_key=cache.make_key(key),
+                value=value,
                 timeout=timeout,
             )
+
+            return value
+
         finally:
-            CacheService._release_lock(
-                key,
-                lock_token,
-            )
+            renewal.stop()
+            lock.release()
 

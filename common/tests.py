@@ -1,14 +1,22 @@
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
+from django.core.cache import cache
+from django.core.cache.backends.redis import RedisSerializer
 from django.test import TestCase
 
 from choices import WeekDaysChoices
-from common.services.cache_exceptions import CacheTimeoutError
+from common.services.cache_exceptions import CacheTimeoutError, CacheUnavailableError
 from common.services.cache_service import CacheService
+from common.services.lock_renewal import LockRenewal
+from common.services.redis_adapter import RedisAdapter
 from progress.models import ProgresTracking
 from progress.services import ProgressAnalyticsService
 from django.contrib.auth import get_user_model
+from common.services.cache_lock import CacheLock
+from common.services.cache_value_serializer import CacheValueSerializer
+from unittest.mock import patch
+from redis.exceptions import RedisError
 
 User = get_user_model()
 
@@ -93,26 +101,30 @@ class CacheServiceTests(TestCase):
         builder.assert_called_once()
         mock_cache.set.assert_not_called()
 
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
     @patch("common.services.cache_service.cache")
-    @patch("common.services.cache_service.uuid")
-    def test_builds_and_caches_value_when_cache_miss_with_lock(self, mock_uuid, mock_cache):
-
+    def test_builds_and_caches_value_when_cache_miss_with_lock(
+            self,
+            mock_cache,
+            mock_cache_lock,
+            mock_redis_adapter,
+    ):
         builder = Mock()
 
         summary = {
             "name": "Test name"
         }
 
-        mock_uuid.uuid4.return_value = "test-token"
-
-        mock_cache.get.side_effect = [
-            None,
-            "test-token",
-        ]
-
-        mock_cache.add.return_value = True
-
+        mock_cache.get.return_value = None
+        mock_cache.make_key.return_value = ":1:test-key"
         builder.return_value = summary
+
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.return_value = True
 
         result = CacheService.get_or_set(
             key="test-key",
@@ -121,30 +133,42 @@ class CacheServiceTests(TestCase):
             use_lock=True,
         )
 
-        self.assertEqual(result, summary)
+        self.assertEqual(
+            result,
+            summary,
+        )
 
         builder.assert_called_once()
 
-        mock_cache.add.assert_called_once_with(
-            "lock:test-key",
-            'test-token',
-            timeout = 10,
+        mock_redis_adapter.set_if_owner.assert_called_once_with(
+            client=mock_redis_client,
+            lock_key="lock:test-key",
+            lock_token=mock_lock.token,
+            cache_key=":1:test-key",
+            value=summary,
+            timeout=300,
         )
 
-        mock_cache.set.assert_called_once_with(
-            key = "test-key",
-            value = summary,
-            timeout = 300,
+        mock_cache_lock.assert_called_once_with(
+            client=mock_redis_client,
+            key="test-key",
+            timeout=10,
         )
 
-        mock_cache.delete.assert_called_once_with(
-            "lock:test-key"
-        )
+        mock_lock.acquire.assert_called_once()
+        mock_lock.release.assert_called_once()
 
-    @patch("common.services.cache_service.time")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
     @patch("common.services.cache_service.cache")
-    def test_builds_and_caches_value_when_cache_miss_when_acquire_lock_fails(self, mock_cache, mock_time):
-
+    @patch("common.services.cache_service.time")
+    def test_builds_and_caches_value_when_cache_miss_when_acquire_lock_fails(
+            self,
+            mock_time,
+            mock_cache,
+            mock_cache_lock,
+            mock_redis_adapter,
+    ):
         summary = {
             "age": 36,
             "name": "Test"
@@ -155,11 +179,13 @@ class CacheServiceTests(TestCase):
             summary,
         ]
 
-        mock_cache.add.return_value = False
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.return_value = False
 
         builder = Mock()
-
-        mock_time.sleep(0.05)
 
         result = CacheService.get_or_set(
             key="test-key",
@@ -168,47 +194,51 @@ class CacheServiceTests(TestCase):
             use_lock=True,
         )
 
-        self.assertEqual(result, summary)
+        self.assertEqual(
+            result,
+            summary,
+        )
 
         builder.assert_not_called()
 
-        mock_cache.add.assert_called_once()
+        mock_cache_lock.assert_called_once_with(
+            client=mock_redis_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        mock_lock.acquire.assert_called_once()
+        mock_lock.release.assert_not_called()
 
         mock_cache.set.assert_not_called()
 
-        mock_cache.delete.assert_not_called()
-
-    @patch("common.services.cache_service.uuid")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
     @patch("common.services.cache_service.time")
     @patch("common.services.cache_service.cache")
     def test_builds_and_caches_value_when_cache_miss_and_second_acquire_lock_attempt_succeeds(
             self,
             mock_cache,
             mock_time,
-            mock_uuid,
+            mock_cache_lock,
+            mock_redis_adapter,
     ):
         summary = {
             "age": 36,
             "name": "Test"
         }
 
-        mock_uuid.uuid4.return_value = "test-token"
-        mock_time.sleep(0.05)
+        mock_cache.get.return_value = None
+        mock_cache.make_key.return_value = ":1:test-key"
 
-        def mock_get(key):
-            if key == "test-key":
-                return None
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
 
-            if key == "lock:test-key":
-                return "test-token"
+        mock_lock = mock_cache_lock.return_value
 
-            return None
-
-        mock_cache.get.side_effect = mock_get
-
-        mock_cache.add.side_effect = [
+        mock_lock.acquire.side_effect = [
             False,
-            True
+            True,
         ]
 
         builder = Mock()
@@ -221,36 +251,53 @@ class CacheServiceTests(TestCase):
             use_lock=True,
         )
 
-        self.assertEqual(result, summary)
+        self.assertEqual(
+            result,
+            summary,
+        )
 
         builder.assert_called_once()
 
-        self.assertEqual(mock_cache.add.call_count, 2)
+        self.assertEqual(
+            mock_lock.acquire.call_count,
+            2,
+        )
 
-        mock_cache.set.assert_called_once()
+        mock_lock.release.assert_called_once()
 
-        mock_cache.delete.assert_called_once()
+        mock_redis_adapter.set_if_owner.assert_called_once_with(
+            client=mock_redis_client,
+            lock_key="lock:test-key",
+            lock_token=mock_lock.token,
+            cache_key=":1:test-key",
+            value=summary,
+            timeout=300,
+        )
 
 
     @patch("common.services.cache_service.AuditLogger")
-    @patch("common.services.cache_service.uuid")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
     @patch("common.services.cache_service.time")
     @patch("common.services.cache_service.cache")
     def test_acquire_lock_fail_timeouts_raises_exception_and_logs(
             self,
             mock_cache,
             mock_time,
-            mock_uuid,
+            mock_cache_lock,
+            mock_redis_adapter,
             mock_audit_logger,
     ):
         builder = Mock()
 
-        mock_uuid.uuid4.return_value = "test-token"
+        mock_cache.get.return_value = None
         mock_time.sleep.return_value = None
 
-        mock_cache.get.return_value = None
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
 
-        mock_cache.add.side_effect = [
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.side_effect = [
             False,
             False,
         ]
@@ -263,58 +310,145 @@ class CacheServiceTests(TestCase):
                 use_lock=True,
             )
 
-        self.assertEqual(mock_cache.add.call_count, 2)
+        self.assertEqual(
+            mock_lock.acquire.call_count,
+            2,
+        )
+
         builder.assert_not_called()
+
         mock_cache.set.assert_not_called()
-        mock_cache.delete.assert_not_called()
+
+        mock_lock.release.assert_not_called()
+
         mock_audit_logger.cache_timeout.assert_called_once_with(
             "test-key"
         )
 
+    @patch("common.services.cache_service.LockRenewal")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
     @patch("common.services.cache_service.cache")
-    def test_lock_not_deleted_when_tokens_do_not_match(
+    def test_does_not_cache_value_if_lock_is_lost(
             self,
             mock_cache,
+            mock_cache_lock,
+            mock_redis_adapter,
+            mock_lock_renewal,
     ):
-        our_token = "our_token"
-        another_token = "another_token"
+        summary = {
+            "name": "Test"
+        }
 
-        mock_cache.get.return_value = another_token
+        mock_cache.get.return_value = None
 
-        CacheService._release_lock(
-            "test-key",
-            our_token,
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.return_value = True
+
+        mock_renewal = mock_lock_renewal.return_value
+        mock_renewal.lock_lost_event.is_set.return_value = True
+
+        builder = Mock()
+        builder.return_value = summary
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
         )
 
-        mock_cache.get.assert_called_once_with(
-            "lock:test-key"
+        self.assertEqual(
+            result,
+            summary,
         )
 
-        mock_cache.delete.assert_not_called()
+        builder.assert_called_once()
 
+        mock_renewal.start.assert_called_once()
+        mock_renewal.stop.assert_called_once()
 
+        mock_cache.set.assert_not_called()
+
+        mock_lock.release.assert_called_once()
+
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.LockRenewal")
     @patch("common.services.cache_service.cache")
-    def test_lock_deleted_when_tokens_match(
+    def test_uses_atomic_set_if_owner_when_lock_is_kept(
             self,
             mock_cache,
+            mock_lock_renewal,
+            mock_cache_lock,
+            mock_redis_adapter,
     ):
-        our_token = "our_token"
+        summary = {
+            "name": "Test",
+        }
 
-        mock_cache.get.return_value = our_token
+        mock_cache.get.return_value = None
+        mock_cache.make_key.return_value = ":1:test-key"
 
-        CacheService._release_lock(
-            "test-key",
-            our_token,
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.return_value = True
+
+        mock_renewal = mock_lock_renewal.return_value
+        mock_renewal.lock_lost_event.is_set.return_value = False
+
+        mock_redis_adapter.set_if_owner.return_value = True
+
+        builder = Mock()
+        builder.return_value = summary
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
         )
 
-        mock_cache.get.assert_called_once_with(
-            "lock:test-key"
+        self.assertEqual(result, summary)
+
+        builder.assert_called_once()
+
+        mock_lock_renewal.assert_called_once_with(
+            lock=mock_lock,
+            interval=5,
         )
 
-        mock_cache.delete.assert_called_once_with(
-            "lock:test-key"
+        mock_renewal.start.assert_called_once()
+        mock_renewal.stop.assert_called_once()
+
+        mock_redis_adapter.set_if_owner.assert_called_once_with(
+            client=mock_redis_client,
+            lock_key="lock:test-key",
+            lock_token=mock_lock.token,
+            cache_key=":1:test-key",
+            value=summary,
+            timeout=300,
         )
 
+        mock_cache.set.assert_not_called()
+
+        mock_lock.release.assert_called_once()
+
+
+    @patch("common.services.cache_service.cache.get")
+    def test_get_raises_cache_unavailable_error_on_redis_error(
+            self,
+            mock_cache_get,
+    ):
+        mock_cache_get.side_effect = RedisError("Redis unavailable")
+
+        with self.assertRaises(CacheUnavailableError):
+            CacheService.get("test-key")
 
 class ProgressAnalyticsServiceTests(TestCase):
 
@@ -869,3 +1003,522 @@ class ProgressAnalyticsServiceTests(TestCase):
         result = ProgressAnalyticsService._cache_key(user)
 
         self.assertEqual(result, "user:113:progress_summary")
+
+
+class CacheLockTests(TestCase):
+
+    @patch("common.services.cache_lock.uuid")
+    def test_acquire_creates_lock(
+            self,
+            mock_uuid,
+    ):
+        mock_client = Mock()
+
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.set.return_value = True
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        result = lock.acquire()
+
+        self.assertTrue(result)
+
+        mock_client.set.assert_called_once_with(
+            "lock:test-key",
+            "test-token",
+            nx=True,
+            ex=10,
+        )
+
+    @patch("common.services.cache_lock.uuid")
+    def test_release_deletes_lock_when_token_matches(
+            self,
+            mock_uuid,
+    ):
+        mock_client = Mock()
+
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.eval.return_value = 1
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        result = lock.release()
+
+        self.assertTrue(result)
+
+        mock_client.eval.assert_called_once_with(
+            CacheLock.RELEASE_SCRIPT,
+            1,
+            "lock:test-key",
+            "test-token",
+        )
+
+    @patch("common.services.cache_lock.uuid")
+    def test_release_does_not_delete_lock_when_token_does_not_match(
+            self,
+            mock_uuid,
+    ):
+        mock_client = Mock()
+
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.eval.return_value = 0
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        result = lock.release()
+
+        self.assertFalse(result)
+
+        mock_client.eval.assert_called_once_with(
+            CacheLock.RELEASE_SCRIPT,
+            1,
+            "lock:test-key",
+            "test-token",
+        )
+
+    @patch("common.services.cache_lock.uuid")
+    def test_renew_extends_lock_when_token_matches(
+            self,
+            mock_uuid,
+    ):
+        mock_client = Mock()
+
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.eval.return_value = 1
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        result = lock.renew()
+
+        self.assertTrue(result)
+
+        mock_client.eval.assert_called_once_with(
+            CacheLock.RENEW_SCRIPT,
+            1,
+            "lock:test-key",
+            "test-token",
+            10,
+        )
+
+    @patch("common.services.cache_lock.uuid")
+    def test_renew_fails_when_token_does_not_match(
+            self,
+            mock_uuid,
+    ):
+        mock_client = Mock()
+
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.eval.return_value = 0
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        result = lock.renew()
+
+        self.assertFalse(result)
+
+        mock_client.eval.assert_called_once_with(
+            CacheLock.RENEW_SCRIPT,
+            1,
+            "lock:test-key",
+            "test-token",
+            10,
+        )
+
+class LockRenewalTests(TestCase):
+
+    def test_run_renews_lock_when_not_stopped(self):
+        lock = Mock()
+
+        renewal = LockRenewal(
+            lock=lock,
+            interval=3,
+        )
+
+        renewal.stop_event.wait = Mock(
+            side_effect=[
+                False,
+                True,
+            ]
+        )
+
+        lock.renew.return_value = True
+
+        renewal._run()
+
+        lock.renew.assert_called_once()
+        self.assertFalse(
+            renewal.lock_lost_event.is_set()
+        )
+
+    def test_run_sets_lock_lost_when_renew_fails(self):
+        lock = Mock()
+
+        renewal = LockRenewal(
+            lock=lock,
+            interval=3,
+        )
+
+        renewal.stop_event.wait = Mock(
+            return_value=False
+        )
+
+        lock.renew.return_value = False
+
+        renewal._run()
+
+        lock.renew.assert_called_once()
+
+        self.assertTrue(
+            renewal.lock_lost_event.is_set()
+        )
+
+    @patch("common.services.lock_renewal.threading.Thread")
+    def test_start_creates_and_starts_thread(
+            self,
+            mock_thread,
+    ):
+        lock = Mock()
+
+        renewal = LockRenewal(
+            lock=lock,
+            interval=3,
+        )
+
+        mock_thread_instance = mock_thread.return_value
+
+        renewal.start()
+
+        mock_thread.assert_called_once_with(
+            target=renewal._run,
+            daemon=True,
+        )
+
+        mock_thread_instance.start.assert_called_once()
+
+        self.assertIs(
+            renewal.thread,
+            mock_thread_instance,
+        )
+
+    def test_stop_signals_and_joins_thread(self):
+        lock = Mock()
+
+        renewal = LockRenewal(
+            lock=lock,
+            interval=3,
+        )
+
+        mock_thread = Mock()
+        renewal.thread = mock_thread
+
+        renewal.stop()
+
+        self.assertTrue(
+            renewal.stop_event.is_set()
+        )
+
+        mock_thread.join.assert_called_once()
+
+class RedisAdapterTests(TestCase):
+
+    @patch("common.services.redis_adapter.redis.Redis.from_url")
+    def test_set_if_owner_executes_atomic_script(
+            self,
+            mock_from_url,
+    ):
+        mock_client = Mock()
+        mock_from_url.return_value = mock_client
+
+        mock_serializer = Mock()
+        mock_serializer.dumps.return_value = b"serialized-value"
+
+        client = RedisAdapter.get_client()
+
+        client.eval.return_value = 1
+
+        result = RedisAdapter.set_if_owner(
+            client=client,
+            serializer=mock_serializer,
+            lock_key="lock:test-key",
+            lock_token="abc-123",
+            cache_key="test-key",
+            value="cached-value",
+            timeout=300,
+        )
+
+        self.assertTrue(result)
+
+        client.eval.assert_called_once()
+
+    @patch("common.services.redis_adapter.redis.Redis.from_url")
+    def test_set_if_owner_serializes_dict_value(
+            self,
+            mock_from_url,
+    ):
+        mock_client = Mock()
+        mock_from_url.return_value = mock_client
+
+        client = RedisAdapter.get_client()
+
+        client.eval.return_value = 1
+
+        mock_serializer = Mock()
+        mock_serializer.dumps.return_value = b"serialized-value"
+
+
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        result = RedisAdapter.set_if_owner(
+            client=client,
+            serializer=mock_serializer,
+            lock_key="lock:test-key",
+            lock_token="abc-123",
+            cache_key="test-key",
+            value=value,
+            timeout=300,
+        )
+
+        self.assertTrue(result)
+
+        mock_client.eval.assert_called_once()
+
+        args = mock_client.eval.call_args.args
+
+        serialized_value = args[5]
+
+        self.assertIsInstance(
+            serialized_value,
+            bytes,
+        )
+
+    def test_django_cache_serializes_dict_value(self):
+        from django.core.cache import cache
+
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        cache.set(
+            key="serialization-test",
+            value=value,
+            timeout=300,
+        )
+
+        result = cache.get("serialization-test")
+
+        self.assertEqual(result, value)
+
+    @patch("common.services.redis_adapter.redis.Redis.from_url")
+    def test_set_if_owner_uses_serializer(
+            self,
+            mock_from_url,
+    ):
+        mock_client = Mock()
+        mock_from_url.return_value = mock_client
+
+        client = RedisAdapter.get_client()
+
+        client.eval.return_value = 1
+
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        mock_serializer = Mock()
+        serialized_value = b"serialized-value"
+        mock_serializer.dumps.return_value = serialized_value
+
+        result = RedisAdapter.set_if_owner(
+            client=client,
+            serializer=mock_serializer,
+            lock_key="lock:test-key",
+            lock_token="abc-123",
+            cache_key="test-key",
+            value=value,
+            timeout=300,
+        )
+
+        self.assertTrue(result)
+
+        mock_serializer.dumps.assert_called_once_with(value)
+
+        args = mock_client.eval.call_args.args
+
+        self.assertEqual(
+            args[5],
+            serialized_value,
+        )
+
+    @patch("common.services.redis_adapter.redis.Redis.from_url")
+    def test_set_if_owner_uses_default_serializer(
+            self,
+            mock_from_url,
+    ):
+        mock_client = Mock()
+        mock_from_url.return_value = mock_client
+        mock_client.eval.return_value = 1
+
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        result = RedisAdapter.set_if_owner(
+            client=mock_client,
+            lock_key="lock:test-key",
+            lock_token="test-token-123",
+            cache_key="test-key",
+            value=value,
+            timeout=300,
+        )
+
+        self.assertTrue(result)
+
+        args = mock_client.eval.call_args.args
+        serialized_value = args[5]
+
+        self.assertIsInstance(
+            serialized_value,
+            bytes,
+        )
+
+    def test_set_if_owner_returns_false_when_lock_is_not_owned(self):
+        mock_client = Mock()
+        mock_client.eval.return_value = 0
+
+        value = {
+            "current_weight": 70,
+        }
+
+        result = RedisAdapter.set_if_owner(
+            client=mock_client,
+            lock_key="lock:test-key",
+            lock_token="abc-123",
+            cache_key="test-key",
+            value=value,
+            timeout=300,
+        )
+
+        self.assertFalse(result)
+
+    def test_set_if_owner_writes_value_that_django_cache_can_read(self):
+
+        lock_key = "lock:integration-test"
+        cache_key = cache.make_key("integration-test")
+        lock_token = "integration-token"
+
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        client = RedisAdapter.get_client()
+
+        self.addCleanup(client.delete, lock_key)
+        self.addCleanup(cache.delete, "integration-test")
+
+        client.set(
+            lock_key,
+            lock_token,
+            nx=True,
+            ex=300,
+        )
+
+        self.assertEqual(
+            client.get(lock_key),
+            lock_token,
+        )
+
+        result = RedisAdapter.set_if_owner(
+            client=client,
+            lock_key=lock_key,
+            lock_token=lock_token,
+            cache_key=cache_key,
+            value=value,
+            timeout=300,
+        )
+
+        self.assertTrue(result)
+
+        cached_value = cache.get("integration-test")
+
+        self.assertEqual(
+            cached_value,
+            value,
+        )
+
+class CacheValueSerializerTests(TestCase):
+
+    def test_dumps_returns_bytes(self):
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        serialized = CacheValueSerializer.dumps(value)
+
+        self.assertIsInstance(
+            serialized,
+            bytes,
+        )
+
+    def test_loads_returns_original_value(self):
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        serialized = CacheValueSerializer.dumps(value)
+
+        result = CacheValueSerializer.loads(serialized)
+
+        self.assertEqual(
+            result,
+            value,
+        )
+
+    def test_matches_django_redis_serializer(self):
+        value = {
+            "current_weight": 70,
+            "progress_percentage": 45.5,
+        }
+
+        django_serializer = RedisSerializer()
+
+        expected = django_serializer.dumps(value)
+        actual = CacheValueSerializer.dumps(value)
+
+        self.assertEqual(
+            actual,
+            expected,
+        )
+
+        self.assertEqual(
+            CacheValueSerializer.loads(actual),
+            django_serializer.loads(expected),
+        )

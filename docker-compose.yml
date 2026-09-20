@@ -33,6 +33,7 @@ services:
     networks:
       - web-network
     restart: unless-stopped
+
   nginx:
     image: nginx:1.28-alpine
     ports:
