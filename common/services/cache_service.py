@@ -10,6 +10,7 @@ from common.services.cache_lock import CacheLock
 from common.services.redis_adapter import RedisAdapter
 from common.services.lock_renewal import LockRenewal
 from redis.exceptions import RedisError
+from common.services.fallback_concurrency import fallback_concurrency
 
 
 class CacheService:
@@ -97,7 +98,11 @@ class CacheService:
             builder,
             timeout,
     ):
-        cached_value = CacheService.get(key)
+        try:
+            cached_value = CacheService.get(key)
+        except CacheUnavailableError:
+            with fallback_concurrency.slot(timeout=settings.CACHE_FALLBACK_TIMEOUT):
+                return builder()
 
         if cached_value is not None:
             return cached_value

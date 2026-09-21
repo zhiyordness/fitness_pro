@@ -1,13 +1,15 @@
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
+from django.conf import settings
 from django.core.cache import cache
 from django.core.cache.backends.redis import RedisSerializer
 from django.test import TestCase
 
 from choices import WeekDaysChoices
-from common.services.cache_exceptions import CacheTimeoutError, CacheUnavailableError
+from common.services.cache_exceptions import CacheTimeoutError, CacheUnavailableError, FallbackConcurrencyTimeout
 from common.services.cache_service import CacheService
+from common.services.fallback_concurrency import FallbackConcurrency, fallback_concurrency
 from common.services.lock_renewal import LockRenewal
 from common.services.redis_adapter import RedisAdapter
 from progress.models import ProgresTracking
@@ -449,6 +451,148 @@ class CacheServiceTests(TestCase):
 
         with self.assertRaises(CacheUnavailableError):
             CacheService.get("test-key")
+
+    @patch("common.services.cache_service.CacheService.get")
+    @patch("common.services.cache_service.fallback_concurrency.slot")
+    def test_get_or_set_uses_fallback_when_cache_is_unavailable(
+            self,
+            mock_slot,
+            mock_cache_get,
+    ):
+        mock_cache_get.side_effect = CacheUnavailableError(
+            "Cache backend is unavailable."
+        )
+
+        builder = Mock(return_value={"value": "from-db"})
+
+        mock_slot.return_value.__enter__.return_value = None
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        self.assertEqual(
+            result,
+            {"value": "from-db"},
+        )
+        builder.assert_called_once()
+        mock_slot.assert_called_once()
+
+    @patch("common.services.cache_service.CacheService.get")
+    @patch("common.services.cache_service.fallback_concurrency.slot")
+    def test_get_or_set_does_not_bypass_fallback_when_slot_is_unavailable(
+            self,
+            mock_slot,
+            mock_cache_get,
+    ):
+        mock_cache_get.side_effect = CacheUnavailableError(
+            "Cache backend is unavailable."
+        )
+
+        mock_slot.side_effect = FallbackConcurrencyTimeout(
+            "Fallback concurrency slot is unavailable."
+        )
+
+        builder = Mock(return_value={"value": "from-db"})
+
+        with self.assertRaises(FallbackConcurrencyTimeout):
+            CacheService.get_or_set(
+                key="test-key",
+                builder=builder,
+                timeout=300,
+                use_lock=True,
+            )
+
+        builder.assert_not_called()
+        mock_slot.assert_called_once()
+
+    @patch("common.services.cache_service.CacheService.get")
+    @patch("common.services.cache_service.fallback_concurrency.slot")
+    def test_fallback_propagates_builder_exception(
+            self,
+            mock_slot,
+            mock_cache_get,
+    ):
+        mock_cache_get.side_effect = CacheUnavailableError(
+            "Cache backend is unavailable."
+        )
+
+        builder = Mock(side_effect=RuntimeError("Database error"))
+
+        mock_slot.return_value.__enter__.return_value = None
+
+        with self.assertRaises(RuntimeError):
+            CacheService.get_or_set(
+                key="test-key",
+                builder=builder,
+                timeout=300,
+                use_lock=True,
+            )
+
+        builder.assert_called_once()
+        mock_slot.assert_called_once()
+
+    @patch("common.services.cache_service.CacheService._try_build_with_lock")
+    @patch("common.services.cache_service.CacheService.get")
+    @patch("common.services.cache_service.fallback_concurrency.slot")
+    def test_fallback_skips_lock_path_when_cache_is_unavailable(
+            self,
+            mock_slot,
+            mock_cache_get,
+            mock_try_build_with_lock,
+    ):
+        mock_cache_get.side_effect = CacheUnavailableError(
+            "Cache backend is unavailable."
+        )
+
+        mock_slot.return_value.__enter__.return_value = None
+
+        builder = Mock(return_value={"value": "from-db"})
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        self.assertEqual(
+            result,
+            {"value": "from-db"},
+        )
+
+        builder.assert_called_once()
+        mock_slot.assert_called_once()
+        mock_try_build_with_lock.assert_not_called()
+
+    @patch("common.services.cache_service.CacheService.get")
+    @patch("common.services.cache_service.fallback_concurrency.slot")
+    def test_fallback_uses_configured_timeout(
+            self,
+            mock_slot,
+            mock_cache_get,
+    ):
+        mock_cache_get.side_effect = CacheUnavailableError(
+            "Cache backend is unavailable."
+        )
+
+        mock_slot.return_value.__enter__.return_value = None
+
+        builder = Mock(return_value={"value": "from-db"})
+
+        CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        mock_slot.assert_called_once_with(
+            timeout=settings.CACHE_FALLBACK_TIMEOUT,
+        )
 
 class ProgressAnalyticsServiceTests(TestCase):
 
@@ -1522,3 +1666,90 @@ class CacheValueSerializerTests(TestCase):
             CacheValueSerializer.loads(actual),
             django_serializer.loads(expected),
         )
+
+
+class FallbackConcurrencyTests(TestCase):
+
+    def test_acquire_returns_true_when_slot_is_available(self):
+        fallback = FallbackConcurrency(max_concurrency=1)
+
+        acquired = fallback.acquire(timeout=0)
+
+        self.assertTrue(acquired)
+
+    def test_second_acquire_fails_when_slot_is_already_taken(self):
+        fallback = FallbackConcurrency(max_concurrency=1)
+
+        first_acquired = fallback.acquire(timeout=0)
+        second_acquired = fallback.acquire(timeout=0)
+
+        self.assertTrue(first_acquired)
+        self.assertFalse(second_acquired)
+
+    def test_slot_can_be_acquired_again_after_release(self):
+        fallback = FallbackConcurrency(max_concurrency=1)
+
+        first_acquired = fallback.acquire(timeout=0)
+        fallback.release()
+        second_acquired = fallback.acquire(timeout=0)
+
+        self.assertTrue(first_acquired)
+        self.assertTrue(second_acquired)
+
+    def test_slot_can_be_released_after_exception(self):
+        fallback = FallbackConcurrency(max_concurrency=1)
+
+        first_acquired = fallback.acquire(timeout=0)
+
+        try:
+            raise RuntimeError("Builder failed")
+        except RuntimeError:
+            fallback.release()
+
+        second_acquired = fallback.acquire(timeout=0)
+
+        self.assertTrue(first_acquired)
+        self.assertTrue(second_acquired)
+
+    def test_acquire_returns_false_after_timeout(self):
+        fallback = FallbackConcurrency(max_concurrency=1)
+
+        first_acquired = fallback.acquire(timeout=0)
+        second_acquired = fallback.acquire(timeout=1)
+
+        fallback.release()
+
+        self.assertTrue(first_acquired)
+        self.assertFalse(second_acquired)
+
+    def test_slot_raises_timeout_when_no_slot_is_available(self):
+        fallback = FallbackConcurrency(max_concurrency=1)
+
+        fallback.acquire(timeout=0)
+
+        with self.assertRaises(FallbackConcurrencyTimeout):
+            with fallback.slot(timeout=0):
+                pass
+
+        fallback.release()
+
+    def test_slot_releases_after_exception(self):
+        fallback = FallbackConcurrency(max_concurrency=1)
+
+        with self.assertRaises(RuntimeError):
+            with fallback.slot(timeout=0):
+                raise RuntimeError("Builder failed")
+
+        acquired_again = fallback.acquire(timeout=0)
+
+        self.assertTrue(acquired_again)
+
+    def test_shared_fallback_concurrency_uses_configured_limit(self):
+
+        first_acquired = fallback_concurrency.acquire(timeout=0)
+        second_acquired = fallback_concurrency.acquire(timeout=0)
+
+        fallback_concurrency.release()
+
+        self.assertTrue(first_acquired)
+        self.assertFalse(second_acquired)
