@@ -34,3 +34,4 @@ class FallbackConcurrency:
 fallback_concurrency = FallbackConcurrency(
     max_concurrency=settings.CACHE_FALLBACK_MAX_CONCURRENCY
 )
+

@@ -408,3 +408,19 @@ class AuditLogger:
             "Cache timeout while waiting for '%s'.",
             cache_key,
         )
+
+    @staticmethod
+    def cache_unavailable(operation, cache_key):
+        logger.error(
+            "Cache backend unavailable during '%s' for '%s'.",
+            operation,
+            cache_key,
+        )
+
+    @staticmethod
+    def cache_write_rejected(cache_key):
+        logger.warning(
+            "Cache write rejected because lock ownership was lost for '%s'.",
+            cache_key,
+        )
+

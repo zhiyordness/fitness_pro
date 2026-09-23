@@ -14,3 +14,4 @@ class CacheValueSerializer:
     @classmethod
     def loads(cls, value):
         return pickle.loads(value)
+

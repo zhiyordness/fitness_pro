@@ -14,6 +14,7 @@ from common.services.fallback_concurrency import fallback_concurrency
 
 
 class CacheService:
+    LOCK_NOT_ACQUIRED = object()
 
 
     @staticmethod
@@ -27,21 +28,29 @@ class CacheService:
 
 
     @staticmethod
-    def set(
-            key,
-            value,
-            timeout,
-    ):
-        cache.set(
-            key=key,
-            value=value,
-            timeout=timeout,
-        )
+    def set(key, value, timeout,):
+        try:
+            cache.set(
+                key=key,
+                value=value,
+                timeout=timeout,
+            )
+        except RedisError:
+            AuditLogger.cache_unavailable(
+                operation="set",
+                cache_key=key,
+            )
 
 
     @staticmethod
     def delete(key):
-        cache.delete(key)
+        try:
+            cache.delete(key)
+        except RedisError:
+            AuditLogger.cache_unavailable(
+                operation="delete",
+                cache_key=key,
+            )
 
 
     @staticmethod
@@ -107,13 +116,19 @@ class CacheService:
         if cached_value is not None:
             return cached_value
 
-        value = CacheService._try_build_with_lock(
-            key=key,
-            builder=builder,
-            timeout=timeout,
-        )
+        try:
+            value = CacheService._try_build_with_lock(
+                key=key,
+                builder=builder,
+                timeout=timeout,
+            )
+        except CacheUnavailableError:
+            with fallback_concurrency.slot(
+                    timeout=settings.CACHE_FALLBACK_TIMEOUT,
+            ):
+                return builder()
 
-        if value is not None:
+        if value is not CacheService.LOCK_NOT_ACQUIRED:
             return value
 
         cached_value = CacheService._wait_for_cache(
@@ -123,16 +138,23 @@ class CacheService:
         if cached_value is not None:
             return cached_value
 
-        value = CacheService._try_build_with_lock(
-            key=key,
-            builder=builder,
-            timeout=timeout,
-        )
+        try:
+            value = CacheService._try_build_with_lock(
+                key=key,
+                builder=builder,
+                timeout=timeout,
+            )
+        except CacheUnavailableError:
+            with fallback_concurrency.slot(
+                    timeout=settings.CACHE_FALLBACK_TIMEOUT,
+            ):
+                return builder()
 
-        if value is not None:
-            return value
+        if value is CacheService.LOCK_NOT_ACQUIRED:
+            CacheService._cache_timeout(key)
 
-        CacheService._cache_timeout(key)
+        return value
+
 
 
     @staticmethod
@@ -152,28 +174,6 @@ class CacheService:
 
         return None
 
-
-    @staticmethod
-    def _build_and_cache(
-            *,
-            key,
-            builder,
-            timeout,
-    ):
-
-        value = builder()
-
-        if value is None:
-            return None
-
-        CacheService.set(
-            key=key,
-            value=value,
-            timeout=timeout,
-        )
-
-        return value
-
     @staticmethod
     def _cache_timeout(key):
 
@@ -187,6 +187,19 @@ class CacheService:
 
     @staticmethod
     def _try_build_with_lock(*, key, builder, timeout):
+        """
+        builder()
+            value
+            lock ownership still valid?
+                NO  -> return value, NO caching
+                YES -> set_if_owner()
+                    success → return value
+                    False   → log rejection → return value
+                    RedisError → log unavailable → return value
+            finally
+                renewal.stop()
+                lock.release()
+        """
         client = RedisAdapter.get_client()
 
         lock = CacheLock(
@@ -196,7 +209,7 @@ class CacheService:
         )
 
         if not lock.acquire():
-            return None
+            return CacheService.LOCK_NOT_ACQUIRED
 
         renewal = LockRenewal(
             lock=lock,
@@ -214,14 +227,25 @@ class CacheService:
             if value is None:
                 return None
 
-            RedisAdapter.set_if_owner(
-                client=client,
-                lock_key=f"lock:{key}",
-                lock_token=lock.token,
-                cache_key=cache.make_key(key),
-                value=value,
-                timeout=timeout,
-            )
+            try:
+                cache_write_succeeded = RedisAdapter.set_if_owner(
+                    client=client,
+                    lock_key=f"lock:{key}",
+                    lock_token=lock.token,
+                    cache_key=cache.make_key(key),
+                    value=value,
+                    timeout=timeout,
+                )
+            except RedisError:
+                AuditLogger.cache_unavailable(
+                    operation="set_if_owner",
+                    cache_key=key,
+                )
+            else:
+                if not cache_write_succeeded:
+                    AuditLogger.cache_write_rejected(
+                        cache_key=key,
+                    )
 
             return value
 

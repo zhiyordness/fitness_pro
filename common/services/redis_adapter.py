@@ -47,3 +47,5 @@ class RedisAdapter:
             serialized_value,
             timeout,
         ) == 1
+
+

@@ -3,6 +3,7 @@ from unittest.mock import Mock
 from django.conf import settings
 from django.test import TestCase
 
+from common.logging.audit import AuditLogger
 from common.services.cache_exceptions import CacheTimeoutError, CacheUnavailableError, FallbackConcurrencyTimeout
 from common.services.cache_service import CacheService
 from django.contrib.auth import get_user_model
@@ -152,6 +153,36 @@ class CacheServiceTests(TestCase):
 
         mock_lock.acquire.assert_called_once()
         mock_lock.release.assert_called_once()
+
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.cache")
+    def test_propagates_redis_error_when_lock_acquire_fails(
+            self,
+            mock_cache,
+            mock_cache_lock,
+            mock_redis_adapter,
+    ):
+        mock_cache.get.return_value = None
+
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.side_effect = RedisError("Redis unavailable")
+
+        builder = Mock(return_value={"value": "from-db"})
+
+        with self.assertRaises(RedisError):
+            CacheService.get_or_set(
+                key="test-key",
+                builder=builder,
+                timeout=300,
+                use_lock=True,
+            )
+
+        builder.assert_not_called()
+        mock_lock.release.assert_not_called()
 
     @patch("common.services.cache_service.RedisAdapter")
     @patch("common.services.cache_service.CacheLock")
@@ -586,3 +617,354 @@ class CacheServiceTests(TestCase):
         mock_slot.assert_called_once_with(
             timeout=settings.CACHE_FALLBACK_TIMEOUT,
         )
+
+    @patch("common.services.cache_service.AuditLogger")
+    @patch("common.services.cache_service.cache")
+    def test_set_logs_cache_unavailable_when_redis_fails(
+            self,
+            mock_cache,
+            mock_audit_logger,
+    ):
+        mock_cache.set.side_effect = RedisError(
+            "Redis unavailable"
+        )
+
+        CacheService.set(
+            key="test-key",
+            value={"value": "test"},
+            timeout=300,
+        )
+
+        mock_audit_logger.cache_unavailable.assert_called_once_with(
+            operation="set",
+            cache_key="test-key",
+        )
+
+    @patch("common.services.cache_service.AuditLogger")
+    @patch("common.services.cache_service.cache")
+    def test_set_does_not_log_cache_unavailable_when_cache_set_succeeds(
+            self,
+            mock_cache,
+            mock_audit_logger,
+    ):
+        CacheService.set(
+            key="test-key",
+            value={"value": "test"},
+            timeout=300,
+        )
+
+        mock_cache.set.assert_called_once_with(
+            key="test-key",
+            value={"value": "test"},
+            timeout=300,
+        )
+
+        mock_audit_logger.cache_unavailable.assert_not_called()
+
+    @patch("common.services.cache_service.AuditLogger")
+    @patch("common.services.cache_service.cache")
+    def test_delete_logs_cache_unavailable_when_redis_fails(
+            self,
+            mock_cache,
+            mock_audit_logger,
+    ):
+        mock_cache.delete.side_effect = RedisError(
+            "Redis unavailable"
+        )
+
+        CacheService.delete(
+            key="test-key"
+        )
+
+        mock_audit_logger.cache_unavailable.assert_called_once_with(
+            operation = "delete",
+            cache_key = "test-key",
+        )
+
+    @patch("common.services.cache_service.AuditLogger")
+    @patch("common.services.cache_service.cache")
+    def test_delete_does_not_log_cache_unavailable_when_cache_delete_succeeds(
+            self,
+            mock_cache,
+            mock_audit_logger,
+    ):
+
+        CacheService.delete(
+            key="test-key"
+        )
+
+        mock_cache.delete.assert_called_once_with(
+            "test-key",
+        )
+
+        mock_audit_logger.cache_unavailable.assert_not_called()
+
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.LockRenewal")
+    def test_does_not_cache_value_if_lock_is_lost_during_build(
+            self,
+            mock_lock_renewal,
+            mock_cache_lock,
+            mock_redis_adapter,
+    ):
+        summary = {
+            'current_weight': 70,
+            'progress_percentage': 50,
+        }
+
+        mock_cache_lock.return_value.acquire.return_value = True
+
+        mock_renewal = mock_lock_renewal.return_value
+        mock_renewal.lock_lost_event.is_set.return_value = False
+
+        def builder():
+            mock_renewal.lock_lost_event.is_set.return_value = True
+            return summary
+
+        result = CacheService._try_build_with_lock(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+        )
+
+        self.assertEqual(result, summary)
+        mock_renewal.start.assert_called_once()
+        mock_renewal.stop.assert_called_once()
+
+        mock_redis_adapter.set_if_owner.assert_not_called()
+        mock_cache_lock.return_value.release.assert_called_once()
+
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheService.get")
+    @patch("common.services.cache_service.fallback_concurrency.slot")
+    def test_uses_fallback_when_lock_acquire_fails_because_redis_is_unavailable(
+            self,
+            mock_slot,
+            mock_cache_get,
+            mock_redis_adapter,
+            mock_cache_lock,
+    ):
+        mock_cache_get.return_value = None
+
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.side_effect = CacheUnavailableError(
+            "Cache backend is unavailable."
+        )
+
+        mock_slot.return_value.__enter__.return_value = None
+
+        builder = Mock(return_value={"value": "from-db"})
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        self.assertEqual(
+            result,
+            {"value": "from-db"},
+        )
+
+        builder.assert_called_once()
+        mock_slot.assert_called_once_with(
+            timeout=settings.CACHE_FALLBACK_TIMEOUT,
+        )
+
+        mock_lock.release.assert_not_called()
+
+    @patch("common.services.cache_service.AuditLogger")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.LockRenewal")
+    @patch("common.services.cache_service.cache")
+    def test_returns_built_value_when_cache_write_fails(
+            self,
+            mock_cache,
+            mock_lock_renewal,
+            mock_cache_lock,
+            mock_redis_adapter,
+            mock_audit_logger,
+    ):
+        summary = {
+            "current_weight": 70,
+            "progress_percentage": 50,
+        }
+
+        mock_cache.get.return_value = None
+        mock_cache.make_key.return_value = ":1:test-key"
+
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.return_value = True
+
+        mock_renewal = mock_lock_renewal.return_value
+        mock_renewal.lock_lost_event.is_set.return_value = False
+
+        mock_redis_adapter.set_if_owner.side_effect = RedisError(
+            "Redis unavailable"
+        )
+
+        builder = Mock(return_value=summary)
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        self.assertEqual(result, summary)
+
+        builder.assert_called_once()
+
+        mock_redis_adapter.set_if_owner.assert_called_once()
+
+        mock_audit_logger.cache_unavailable.assert_called_once_with(
+            operation="set_if_owner",
+            cache_key="test-key",
+        )
+
+        mock_lock.release.assert_called_once()
+
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.LockRenewal")
+    @patch("common.services.cache_service.cache")
+    def test_returns_built_value_when_cache_write_is_rejected(
+            self,
+            mock_cache,
+            mock_lock_renewal,
+            mock_cache_lock,
+            mock_redis_adapter,
+    ):
+        summary = {
+            "current_weight": 70,
+            "progress_percentage": 50,
+        }
+
+        mock_cache.get.return_value = None
+        mock_cache.make_key.return_value = ":1:test-key"
+
+        mock_redis_client = Mock()
+        mock_redis_adapter.get_client.return_value = mock_redis_client
+
+        mock_lock = mock_cache_lock.return_value
+        mock_lock.acquire.return_value = True
+
+        mock_renewal = mock_lock_renewal.return_value
+        mock_renewal.lock_lost_event.is_set.return_value = False
+
+        mock_redis_adapter.set_if_owner.return_value = False
+
+        builder = Mock(return_value=summary)
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        self.assertEqual(result, summary)
+
+        builder.assert_called_once()
+        mock_redis_adapter.set_if_owner.assert_called_once()
+        mock_lock.release.assert_called_once()
+
+    @patch("common.services.cache_service.AuditLogger")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.LockRenewal")
+    @patch("common.services.cache_service.cache")
+    def test_logs_when_cache_write_is_rejected(
+            self,
+            mock_cache,
+            mock_lock_renewal,
+            mock_cache_lock,
+            mock_redis_adapter,
+            mock_audit_logger,
+    ):
+        summary = {
+            "current_weight": 70,
+            "progress_percentage": 50,
+        }
+
+        mock_cache.get.return_value = None
+
+        mock_cache_lock.return_value.acquire.return_value = True
+
+        mock_renewal = mock_lock_renewal.return_value
+        mock_renewal.lock_lost_event.is_set.return_value = False
+
+        mock_redis_adapter.set_if_owner.return_value = False
+
+        builder = Mock(return_value=summary)
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        self.assertEqual(result, summary)
+
+        builder.assert_called_once()
+
+        mock_redis_adapter.set_if_owner.assert_called_once()
+
+        mock_audit_logger.cache_write_rejected.assert_called_once_with(
+            cache_key="test-key",
+        )
+
+        mock_cache_lock.return_value.release.assert_called_once()
+
+    @patch("common.services.cache_service.fallback_concurrency")
+    @patch("common.services.cache_service.CacheLock")
+    @patch("common.services.cache_service.LockRenewal")
+    @patch("common.services.cache_service.CacheService._wait_for_cache")
+    @patch("common.services.cache_service.RedisAdapter")
+    @patch("common.services.cache_service.cache")
+    def test_does_not_wait_for_cache_when_builder_returns_none_after_lock_acquired(
+            self,
+            mock_cache,
+            mock_redis_adapter,
+            mock_wait_for_cache,
+            mock_lock_renewal,
+            mock_cache_lock,
+            mock_fallback_concurrency,
+    ):
+        mock_cache.get.return_value = None
+
+        mock_cache_lock.return_value.acquire.return_value = True
+
+        mock_renewal = mock_lock_renewal.return_value
+        mock_renewal.lock_lost_event.is_set.return_value = False
+
+        builder = Mock(return_value=None)
+
+        result = CacheService.get_or_set(
+            key="test-key",
+            builder=builder,
+            timeout=300,
+            use_lock=True,
+        )
+
+        self.assertIsNone(result)
+
+        builder.assert_called_once()
+
+        mock_wait_for_cache.assert_not_called()
+
+        mock_cache_lock.return_value.release.assert_called_once()
+
+

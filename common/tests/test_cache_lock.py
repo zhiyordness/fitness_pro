@@ -3,6 +3,9 @@ from unittest.mock import Mock, patch
 from django.test import TestCase
 
 from django.contrib.auth import get_user_model
+from redis.exceptions import RedisError
+
+from common.services.cache_exceptions import CacheUnavailableError
 from common.services.cache_lock import CacheLock
 
 
@@ -147,3 +150,59 @@ class CacheLockTests(TestCase):
             "test-token",
             10,
         )
+
+    @patch("common.services.cache_lock.uuid")
+    def test_renew_returns_false_when_redis_is_unavailable(
+            self,
+            mock_uuid,
+    ):
+        mock_client = Mock()
+
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.eval.side_effect = RedisError(
+            "Redis unavailable"
+        )
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        result = lock.renew()
+
+        self.assertFalse(result)
+
+    @patch("common.services.cache_lock.uuid")
+    def test_release_returns_false_when_redis_is_unavailable(self, mock_uuid):
+        mock_client = Mock()
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.eval.side_effect = RedisError("Redis unavailable")
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        result = lock.release()
+
+        self.assertFalse(result)
+
+    @patch("common.services.cache_lock.uuid")
+    def test_acquire_raises_cache_unavailable_error_when_redis_is_unavailable(
+            self,
+            mock_uuid,
+    ):
+        mock_client = Mock()
+        mock_uuid.uuid4.return_value = "test-token"
+        mock_client.set.side_effect = RedisError("Redis unavailable")
+
+        lock = CacheLock(
+            client=mock_client,
+            key="test-key",
+            timeout=10,
+        )
+
+        with self.assertRaises(CacheUnavailableError):
+            lock.acquire()

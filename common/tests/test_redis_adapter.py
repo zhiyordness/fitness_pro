@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 from django.core.cache import cache
 
 from django.test import TestCase
+from redis.exceptions import RedisError
 
 from common.services.redis_adapter import RedisAdapter
 
@@ -244,3 +245,45 @@ class RedisAdapterTests(TestCase):
             cached_value,
             value,
         )
+
+    @patch("common.services.redis_adapter.CacheValueSerializer")
+    def test_set_if_owner_raises_when_redis_is_unavailable(
+            self,
+            mock_serializer,
+    ):
+        mock_client = Mock()
+        mock_serializer.dumps.return_value = b"serialized-value"
+        mock_client.eval.side_effect = RedisError("Redis unavailable")
+
+        with self.assertRaises(RedisError):
+            RedisAdapter.set_if_owner(
+                client=mock_client,
+                lock_key="lock:test-key",
+                lock_token="test-token",
+                cache_key=":1:test-key",
+                value={"value": "test"},
+                timeout=300,
+            )
+
+        mock_serializer.dumps.assert_called_once_with(
+            {"value": "test"},
+        )
+
+    def test_set_if_owner_returns_false_when_lock_token_does_not_match(self):
+        mock_client = Mock()
+
+        mock_client.eval.return_value = 0
+
+        result = RedisAdapter.set_if_owner(
+            client=mock_client,
+            lock_key="lock:test-key",
+            lock_token="test-token",
+            cache_key=":1:test-key",
+            value={"value": "test"},
+            timeout=300,
+        )
+
+        self.assertFalse(result)
+
+        mock_client.eval.assert_called_once()
+

@@ -33,3 +33,4 @@ class LockRenewal:
 
         if self.thread is not None:
             self.thread.join()
+

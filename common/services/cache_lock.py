@@ -1,5 +1,9 @@
 import uuid
 
+from redis import RedisError
+
+from common.services.cache_exceptions import CacheUnavailableError
+
 
 class CacheLock:
 
@@ -30,31 +34,41 @@ class CacheLock:
         self.timeout = timeout
 
     def acquire(self):
-        return self.client.set(
-            self.key,
-            self.token,
-            nx=True,
-            ex=self.timeout,
-        )
+        try:
+            return self.client.set(
+                self.key,
+                self.token,
+                nx=True,
+                ex=self.timeout,
+            )
+        except RedisError as exc:
+            raise CacheUnavailableError(
+                "Cache backend is unavailable."
+            ) from exc
 
     def renew(self):
-        result = self.client.eval(
-            self.RENEW_SCRIPT,
-            1,
-            self.key,
-            self.token,
-            self.timeout,
-        )
-
-        return result == 1
+        try:
+            result = self.client.eval(
+                self.RENEW_SCRIPT,
+                1,
+                self.key,
+                self.token,
+                self.timeout,
+            )
+            return result == 1
+        except RedisError:
+            return False
 
     def release(self):
-        result = self.client.eval(
-            self.RELEASE_SCRIPT,
-            1,
-            self.key,
-            self.token,
-        )
+        try:
+            result = self.client.eval(
+                self.RELEASE_SCRIPT,
+                1,
+                self.key,
+                self.token,
+            )
+            return result == 1
 
-        return result == 1
+        except RedisError:
+            return False
 

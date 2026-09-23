@@ -104,3 +104,5 @@ class LockRenewalTests(TestCase):
         )
 
         mock_thread.join.assert_called_once()
+
+
