@@ -6,17 +6,22 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from choices import WorkoutSessionStatus, WorkoutDayStatus
-from training.models import WorkoutSession, WorkoutExerciseSession, WorkoutSet, PersonalRecord, TrainingDay, Exercise, \
+from training.models import WorkoutSession, WorkoutSessionExercise, WorkoutSet, PersonalRecord, TrainingDay, Exercise, \
     TrainingDayExercise, MuscleGroup
 
 
 class TrainingDayService:
+    """
+    Provides business logic for creating, modifying, and preparing
+    planned training days and their exercises.
+    """
 
     @staticmethod
     def configure_training_day(training_day, exercise_id_list):
         """
-        Populate a training day with exercises and
-        automatically assign muscle groups.
+        Adds the selected exercises to a training day in the specified order,
+        copies their default sets and repetitions, and assigns the corresponding
+        muscle groups to the training day.
         """
         for order, exercise_id in enumerate(
                 exercise_id_list,
@@ -55,6 +60,9 @@ class TrainingDayService:
 
     @staticmethod
     def swap_exercise_order(current_exercise, target_exercise,):
+        """
+        Swaps the positions of two exercises within a training day.
+        """
         current_order = current_exercise.order
 
         current_exercise.order = target_exercise.order
@@ -66,6 +74,10 @@ class TrainingDayService:
 
     @staticmethod
     def build_exercises_by_muscle(training_day):
+        """
+        Groups the exercises assigned to a training day by the muscles they target.
+        """
+
         exercises_by_muscle = {}
 
         for training_day_exercise in (
@@ -87,6 +99,10 @@ class TrainingDayService:
 
     @staticmethod
     def build_muscle_data(muscle_groups):
+        """
+        Builds a JSON representation of muscle groups, muscles, and
+        their available exercises.
+        """
 
         muscle_data = {}
 
@@ -116,6 +132,11 @@ class TrainingDayService:
 
     @staticmethod
     def build_selected_exercises(selected_exercises, muscle_groups):
+        """
+        Builds a JSON representation of selected exercises enriched
+        with their muscle and muscle group information.
+        """
+
         enhanced_exercises = []
 
         for exercise in selected_exercises:
@@ -138,12 +159,23 @@ class TrainingDayService:
 
 
 class WorkoutSessionService:
+    """
+    Provides business logic for starting, tracking, and completing
+    actual workout sessions.
+    """
 
     @staticmethod
     def start_workout(
             user,
             training_day,
     ):
+        """
+        Starts a workout session from a planned training day.
+
+        Creates the workout session, its exercises, and the configured
+        workout sets for each exercise.
+        """
+
         active_session = (
             WorkoutSessionService
             .get_active_workout_session(
@@ -167,7 +199,7 @@ class WorkoutSessionService:
         for training_day_exercise in training_day_exercises:
 
             exercise_session = (
-                WorkoutExerciseSession.objects.create(
+                WorkoutSessionExercise.objects.create(
                     workout_session=workout_session,
                     training_day_exercise=training_day_exercise,
                     order=training_day_exercise.order,
@@ -194,6 +226,10 @@ class WorkoutSessionService:
     def has_completed_sets(
             workout_session,
     ):
+        """
+        Checks whether a workout session contains at least one completed set.
+        """
+
         return WorkoutSet.objects.filter(
             exercise_session__workout_session=workout_session,
             is_completed=True,
@@ -204,6 +240,10 @@ class WorkoutSessionService:
             user,
             training_day,
     ):
+        """
+        Returns the latest active workout session for a user and training day.
+        """
+
         return (
             WorkoutSession.objects.filter(
                 owner=user,
@@ -218,6 +258,12 @@ class WorkoutSessionService:
     def check_and_finish_workout(
             workout_session,
     ):
+        """
+        Completes a workout session when all of its sets have been completed.
+
+        Records the completion time and updates the workout status.
+        """
+
         total_sets = WorkoutSet.objects.filter(
             exercise_session__workout_session=
             workout_session,
@@ -249,11 +295,19 @@ class WorkoutSessionService:
 
 
 class WorkoutStatisticsService:
+    """
+    Provides calculated statistics for an individual workout session.
+    """
 
     @staticmethod
     def get_workout_statistics(
             workout_session,
     ):
+        """
+        Calculates the exercise count, set counts, completion rate,
+        and workout duration for a workout session.
+        """
+
         exercise_count = (
             workout_session
             .exercise_sessions
@@ -312,11 +366,20 @@ class WorkoutStatisticsService:
 
 
 class PersonalRecordService:
+    """
+    Provides business logic for creating and updating personal records
+    based on completed workout sets.
+    """
 
     @staticmethod
     def update_personal_record(
             workout_set,
     ):
+        """
+        Creates a personal record when none exists or updates the existing
+        record when a higher weight is achieved for the exercise.
+        """
+
         exercise = (
             workout_set
             .exercise_session
@@ -374,9 +437,18 @@ class PersonalRecordService:
 
 
 class TrainingAnalyticsService:
+    """
+    Provides aggregated training statistics for a user across
+    their completed workout history.
+    """
 
     @staticmethod
     def get_training_overview(user):
+        """
+        Calculates the user's overall training statistics, including
+        completed workouts, completed sets, repetitions, total volume,
+        and average workout duration.
+        """
 
         completed_workouts = (
             WorkoutSession.objects.filter(
@@ -458,12 +530,22 @@ class TrainingAnalyticsService:
 
 
 class ExerciseAnalyticsService:
+    """
+    Provides performance statistics for a specific exercise
+    within a user's workout history.
+    """
 
     @staticmethod
     def get_exercise_overview(
             user,
             exercise,
     ):
+        """
+        Calculates exercise-specific performance statistics, including
+        completed sets, repetitions, volume, average weight,
+        average repetitions, and number of completed performances.
+        """
+
         completed_sets = (
             WorkoutSet.objects.filter(
                 exercise_session__training_day_exercise__exercise=
@@ -516,7 +598,7 @@ class ExerciseAnalyticsService:
         )
 
         times_performed = (
-            WorkoutExerciseSession.objects.filter(
+            WorkoutSessionExercise.objects.filter(
                 training_day_exercise__exercise=exercise,
                 workout_session__owner=user,
                 workout_session__status=(
@@ -535,9 +617,18 @@ class ExerciseAnalyticsService:
         }
 
 class AdherenceAnalyticsService:
+    """
+    Provides statistics describing how consistently a user follows
+    their planned training schedule.
+    """
 
     @staticmethod
     def get_adherence_overview(user):
+        """
+        Calculates workout adherence statistics, including completed workouts,
+        cancelled workouts, completion rate, and current and longest streaks.
+        """
+
         completed_workouts = (
             WorkoutSession.objects.filter(
                 owner=user,
@@ -591,9 +682,17 @@ class AdherenceAnalyticsService:
 
 
 class WorkoutStreakService:
+    """
+    Provides business logic for determining training-day status
+    and calculating workout streaks from a user's training history.
+    """
 
     @staticmethod
     def get_training_days(user):
+        """
+        Returns the weekdays on which the user has planned training days.
+        """
+
         return set(
             TrainingDay.objects.filter(
                 owner=user,
@@ -606,6 +705,9 @@ class WorkoutStreakService:
 
     @staticmethod
     def get_streak_overview(user):
+        """
+        Returns the user's current and longest workout streaks.
+        """
 
         expected_training_days = (
             WorkoutStreakService
@@ -640,6 +742,10 @@ class WorkoutStreakService:
             user,
             target_date,
     ):
+        """
+        Determines the status of a specific training date based on the
+        user's planned training schedule and workout history.
+        """
 
         weekday = (
             target_date.strftime(
@@ -701,6 +807,9 @@ class WorkoutStreakService:
 
     @staticmethod
     def debug_today_status(user):
+        """
+        Returns the current status of today's planned training day.
+        """
 
         today = timezone.localdate()
 
@@ -715,6 +824,9 @@ class WorkoutStreakService:
 
     @staticmethod
     def get_first_completed_date(user):
+        """
+        Returns the date of the user's earliest completed workout.
+        """
 
         first_workout = (
             WorkoutSession.objects.filter(
@@ -736,6 +848,11 @@ class WorkoutStreakService:
     def get_expected_training_days(
             user,
     ):
+        """
+        Builds the list of expected training days from the user's first
+        completed workout through the current date.
+        """
+
         first_date = (
             WorkoutStreakService
             .get_first_completed_date(user)
@@ -778,6 +895,10 @@ class WorkoutStreakService:
             user,
             expected_training_days,
     ):
+        """
+        Calculates the longest consecutive streak of successful
+        expected training days.
+        """
 
         current_run = 0
         longest_run = 0
@@ -828,6 +949,10 @@ class WorkoutStreakService:
             user,
             expected_training_days,
     ):
+        """
+        Calculates the user's current consecutive training streak,
+        starting from the latest expected training day.
+        """
 
         current_streak = 0
 

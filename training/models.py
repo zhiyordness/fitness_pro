@@ -10,6 +10,12 @@ from common.models import BaseModel
 UserModel = get_user_model()
 
 class Exercise(BaseModel):
+    """
+    Represents an exercise from the exercise catalog.
+
+    Stores the exercise's default training configuration and
+    the muscles targeted by the exercise.
+    """
     muscles = models.ManyToManyField(
         'Muscle',
         related_name='exercises',
@@ -34,10 +40,22 @@ class Exercise(BaseModel):
 
 
 class MuscleGroup(BaseModel):
+    """
+    Represents a group of related muscles.
+
+    Groups muscles into broader anatomical categories used
+    to organize and select exercises.
+    """
     ...
 
 
 class Muscle(BaseModel):
+    """
+    Represents a specific muscle within a muscle group.
+
+    Connects an individual muscle to its group and to the
+    exercises that target it.
+    """
 
     group = models.ForeignKey(
         'MuscleGroup',
@@ -49,6 +67,12 @@ class Muscle(BaseModel):
 
 
 class TrainingDay(models.Model):
+    """
+    Represents a planned training day in a user's training program.
+
+    Defines when the training day is scheduled, its description,
+    and the muscle groups targeted by the planned workout.
+    """
 
     owner = models.ForeignKey(
         UserModel,
@@ -89,6 +113,13 @@ class TrainingDay(models.Model):
 
 
 class TrainingDayExercise(models.Model):
+    """
+    Represents a specific exercise assigned to a TrainingDay.
+
+    Stores the exercise's training-day-specific configuration,
+    including the number of sets, repetitions, and its position
+    within the training day.
+    """
 
     training_day = models.ForeignKey(
         TrainingDay,
@@ -120,6 +151,13 @@ class TrainingDayExercise(models.Model):
 
 
 class WorkoutSession(BaseModel):
+    """
+    Represents an actual workout performed by a user.
+
+    Connects a completed or ongoing workout to its planned
+    TrainingDay and tracks when the workout started, finished,
+    and its current status.
+    """
 
     owner = models.ForeignKey(
         UserModel,
@@ -152,7 +190,13 @@ class WorkoutSession(BaseModel):
         return f"Workout Session - {self.owner.email} - {self.training_day.day} - {self.started_at}"
 
 
-class WorkoutExerciseSession(BaseModel):
+class WorkoutSessionExercise(BaseModel):
+    """
+    Represents a specific exercise within a WorkoutSession.
+
+    Connects the workout session to the exercise being performed
+    and serves as the parent entity for the exercise's workout sets.
+    """
 
     workout_session = models.ForeignKey(
         WorkoutSession,
@@ -170,9 +214,15 @@ class WorkoutExerciseSession(BaseModel):
 
 
 class WorkoutSet(BaseModel):
+    """
+    Represents a single set performed for an exercise during a workout.
+
+    Records the actual weight, repetitions, set number,
+    and whether the set has been completed.
+    """
 
     exercise_session = models.ForeignKey(
-        WorkoutExerciseSession,
+        WorkoutSessionExercise,
         on_delete=models.CASCADE,
         related_name='sets',
     )
@@ -206,6 +256,12 @@ class WorkoutSet(BaseModel):
 
 
 class PersonalRecord(BaseModel):
+    """
+    Represents a user's personal record for a specific exercise.
+
+    Stores the workout set that established the record together
+    with the achieved weight, repetitions, and timestamp.
+    """
 
     owner = models.ForeignKey(
         UserModel,

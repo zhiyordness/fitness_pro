@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from accounts.models import FitnessProUser
 from choices import WeekDaysChoices
 from training.models import Exercise, TrainingDay, TrainingDayExercise, WorkoutSession, \
-    WorkoutExerciseSession, WorkoutSet, PersonalRecord
+    WorkoutSessionExercise, WorkoutSet, PersonalRecord
 from training.services import PersonalRecordService
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -259,7 +259,7 @@ class PersonalRecordServiceIntegrationTest(TestCase):
             training_day=training_day,
         )
 
-        workout_exercise_session = WorkoutExerciseSession.objects.create(
+        workout_exercise_session = WorkoutSessionExercise.objects.create(
             workout_session=workout_session,
             training_day_exercise=training_day_exercise,
             order=1,
@@ -331,7 +331,7 @@ class PersonalRecordServiceIntegrationTest(TestCase):
             training_day=training_day,
         )
 
-        workout_exercise_session = WorkoutExerciseSession.objects.create(
+        workout_exercise_session = WorkoutSessionExercise.objects.create(
             workout_session=workout_session,
             training_day_exercise=training_day_exercise,
             order=1,
